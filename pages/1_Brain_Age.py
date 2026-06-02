@@ -15,7 +15,7 @@ st.set_page_config(page_title="Brain Age Model Performance", layout="wide")
 # -------------------------
 @st.cache_data
 def load_data():
-    return pd.read_csv("/Users/vb506/Documents/dashboard/data/perf_brain.csv")
+    return pd.read_csv("data/perf_brain.csv")
 
 df = load_data()
 
