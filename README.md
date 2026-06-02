@@ -6,8 +6,9 @@ Interactive Streamlit app for visualising epigenetic age and brain age predictio
 
 ```bash
 streamlit run Home.py
+```
 
 ```md
 ## Live App
-
 https://epi-brain-age-dashboard.streamlit.app
+```
