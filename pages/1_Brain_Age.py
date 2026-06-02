@@ -107,7 +107,7 @@ st.plotly_chart(fig_box, use_container_width=True)
 # FULL MODEL PERFORMANCE PLOT
 # =========================================================
 
-def plot_model_performance(df, est_df):
+def plot_model_performance(df, est_df, metric):
 
     df = df.copy()
     est_df = est_df.copy()
@@ -116,7 +116,7 @@ def plot_model_performance(df, est_df):
     # MODEL ORDER
     # -------------------------
     model_order = (
-        df.groupby("model")["wMAE_test"]
+        df.groupby("model")[metric]
         .mean()
         .sort_values(ascending=True)
         .index.tolist()
@@ -195,7 +195,7 @@ def plot_model_performance(df, est_df):
         # DATA TRACE (real plot)
         # -------------------------
         fig.add_trace(go.Scatter(
-            x=sub["wMAE_test"],
+            x=sub[metric],
             y=sub["y_jitter"],
             mode="markers",
             legendgroup="cohort",
@@ -254,7 +254,8 @@ def plot_model_performance(df, est_df):
         ))
 
         fig.add_trace(go.Scatter(
-            x=[row["wMAE"]],
+            #x=[row["wMAE"]],
+            x=[row["estimate"]],
             y=[y],
             mode="markers",
             marker=dict(size=11, color="black", symbol="diamond"),
@@ -266,8 +267,8 @@ def plot_model_performance(df, est_df):
 
     fig.add_shape(
         type="line",
-        x0=df["wMAE_test"].min(),
-        x1=df["wMAE_test"].max(),
+        x0=df[metric].min(),
+        x1=df[metric].max(),
         y0=pooled_y + 0.5,
         y1=pooled_y + 0.5,
         line=dict(color="grey", width=1)
@@ -279,7 +280,8 @@ def plot_model_performance(df, est_df):
     fig.update_layout(
         height=850,
         title="Brain Age Model Performance",
-        xaxis_title="Weighted MAE",
+        xaxis_title=metric,
+        
 
         yaxis=dict(
             tickmode="array",
@@ -299,6 +301,8 @@ def plot_model_performance(df, est_df):
         )
     )
 
+    fig.update_xaxes(autorange=True)    
+    
     # =========================================================
     # GLOBAL COLORBAR (lower right)
     # =========================================================
@@ -446,12 +450,56 @@ import pandas as pd
 #     })
 #overall_est = rma_mv_python(filtered)
 
-def rma_mv_exact(df):
+# def pooled_by_model(df, metric, se_col):
+#     out = []
 
-    df = df.dropna(subset=["wMAE_test", "wMAE_SE_boot"]).copy()
+#     for m, sub in df.groupby("model"):
+#         sub = sub.dropna(subset=[metric, se_col])
 
-    yi = df["wMAE_test"].values
-    vi = df["wMAE_SE_boot"].values ** 2
+#         if len(sub) < 2:
+#             continuea
+
+#         yi = sub[metric].values
+#         vi = sub[se_col].values ** 2
+#         wi = 1 / vi
+
+#         mu = np.sum(wi * yi) / np.sum(wi)
+#         se = np.sqrt(1 / np.sum(wi))
+
+#         out.append({
+#             "model": m,
+#             "estimate": mu,
+#             "ci.lb": mu - 1.96 * se,
+#             "ci.ub": mu + 1.96 * se
+#         })
+
+#     return pd.DataFrame(out)
+
+# model_est = pooled_by_model(filtered, metric, se_col)
+
+se_map = {
+    "MAE": "MAE_SE_boot",
+    "RMSE": "RMSE_SE_boot",
+    "wMAE_test": "wMAE_SE_boot",
+    "nRMSE": "nRMSE_SE_boot",
+    "RAE": "RAE_SE_boot",
+    "Pearson": "pearson_se",
+    "Spearman": None,  # maybe no SE available
+    "R2": None         # usually not meta-analysed like this
+}
+
+
+def rma_mv_exact(df, metric):
+
+    #df = df.dropna(subset=[metric, "wMAE_SE_boot"]).copy()
+    df = df.dropna(subset=[metric, se_col]).copy()
+
+    yi = df[metric].values
+    #vi = df["wMAE_SE_boot"].values ** 2
+    #vi = df[se_col] ** 2
+    se = df[se_col].values
+    vi = se ** 2
+    
 
     wi = 1 / vi
 
@@ -477,13 +525,28 @@ def rma_mv_exact(df):
 
     return pd.DataFrame({
         "model": ["Pooled"],
-        "wMAE": [mu],
+        "estimate": [mu],
+        #"wMAE": [mu],
         "ci.lb": [ci_lb],
         "ci.ub": [ci_ub]
     })
 
-overall_est = rma_mv_exact(filtered)
+se_col = se_map.get(metric)
 
-fig_adv = plot_model_performance(filtered, overall_est)
+if se_col is None or se_col not in filtered.columns:
+    # fallback: simple pooled mean
+    overall_est = pd.DataFrame({
+        "model": ["Pooled"],
+        "estimate": [filtered[metric].mean()],
+        "ci.lb": [np.nan],
+        "ci.ub": [np.nan]
+    })
+else:
+    overall_est = rma_mv_exact(filtered, metric)
+    
+#overall_est = rma_mv_exact(filtered, metric)
+
+#fig_adv = plot_model_performance(filtered, overall_est)
+fig_adv = plot_model_performance(filtered, overall_est, metric)
 
 st.plotly_chart(fig_adv, use_container_width=True)
