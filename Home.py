@@ -18,7 +18,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-
+# colours are set in: .streamlit/config.toml 
 
 st.set_page_config(page_title="MIND Consortium Ageing Dashboard", layout="wide")
 
@@ -75,21 +75,31 @@ cohorts = pd.DataFrame([
 
 st.subheader("Cohort Descriptives")
 
-c1, c2 = st.columns([2, 1])
+# c1, c2 = st.columns([2, 1])
 
-with c1:
-    st.dataframe(cohorts, use_container_width=True)
+# with c1:
+#     st.dataframe(cohorts, use_container_width=True)
 
-with c2:
-    fig = px.bar(
+# with c2:
+#     fig = px.bar(
+#         cohorts,
+#         x="Cohort",
+#         y="Timepoints",
+#         color="Country",
+#         title="Longitudinal Depth per Cohort"
+#     )
+#     st.plotly_chart(fig, use_container_width=True)
+
+st.dataframe(cohorts, use_container_width=True)
+
+fig = px.bar(
         cohorts,
         x="Cohort",
         y="Timepoints",
         color="Country",
         title="Longitudinal Depth per Cohort"
     )
-    st.plotly_chart(fig, use_container_width=True)
-
+st.plotly_chart(fig, use_container_width=True)
 
 
 import pandas as pd
