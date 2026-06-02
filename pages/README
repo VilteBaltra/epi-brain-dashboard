@@ -1,0 +1,4 @@
+# how to run
+pip install streamlit pandas plotly
+cd /Users/vb506/Documents/dashboard
+streamlit run app.py
