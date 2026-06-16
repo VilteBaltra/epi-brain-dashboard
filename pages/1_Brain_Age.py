@@ -1,12 +1,24 @@
-# need to add: 
+# need to add:
 # pooled estimate per model
 # meta-analysed overall estimate as per Marlene R script
 # estimate shapes matching Marlene's R plot
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import streamlit as st
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
-import numpy as np
+
+from plot_helpers import (
+    COHORT_PALETTE, BRAIN_MODEL_PALETTE,
+    BRAIN_BIN5_LEVELS, _bin_brain5, BRAIN_GEN_BRAINAGE, BRAIN_GEN_NEXTGEN,
+    _add_fisher_z, _compute_modelwise_meta, _compute_meta_z, _compute_bin_meta,
+    _gen_order_ascending, _k_counts, forest_plot, violin_plot,
+)
 
 st.set_page_config(page_title="Brain Age Model Performance", layout="wide")
 
@@ -550,3 +562,120 @@ else:
 fig_adv = plot_model_performance(filtered, overall_est, metric)
 
 st.plotly_chart(fig_adv, use_container_width=True)
+
+
+# =========================================================
+# PUBLICATION FIGURES (Fig 3A · 3B · 3C)
+# =========================================================
+
+st.divider()
+st.header("Publication Figures")
+st.caption("Replicating paper figures — responds to sidebar filters above.")
+
+
+@st.cache_data(show_spinner=False)
+def _compute_brain_pub_data(raw_df: pd.DataFrame):
+    """Run all meta-analyses for Figs 3A–3C. Cached after first load."""
+    d = raw_df.copy()
+    d = _add_fisher_z(d)
+
+    # Sub-dataset (exclude DunedinPACNI)
+    sub = d[~d["model"].isin(["DunedinPACNI"])].copy()
+    sub["wMAE_var"] = sub["wMAE_SE_boot"] ** 2
+
+    # 3A — wMAE modelwise meta (raw scale, no back-transform)
+    wmae_meta = _compute_modelwise_meta(
+        sub, yi_col="wMAE_test", vi_col="wMAE_var", back_transform=False
+    )
+
+    # 3B — Pearson meta on full dataset
+    pearson_meta = _compute_meta_z(d, group_cols=["model"])
+
+    # 3C — wMAE by age bin
+    brain_b5 = sub.copy()
+    brain_b5["age_bin"] = pd.Categorical(
+        brain_b5["mean_age"].map(_bin_brain5), categories=BRAIN_BIN5_LEVELS, ordered=True
+    )
+    bin_meta = _compute_bin_meta(brain_b5, yi_col="wMAE_test", vi_col="wMAE_var")
+    counts   = _k_counts(brain_b5)
+
+    return sub, wmae_meta, d, pearson_meta, brain_b5, bin_meta, counts
+
+
+with st.spinner("Computing meta-analyses…"):
+    (brain_sub, brain_wmae_mw, brain_full, brain_pearson_mw,
+     brain_b5, meta_brain_b5, brain_counts) = _compute_brain_pub_data(filtered)
+
+tab_3a, tab_3b, tab_3c = st.tabs([
+    "Fig 3A — Weighted MAE forest",
+    "Fig 3B — Pearson r forest",
+    "Fig 3C — Weighted MAE by age",
+])
+
+# ── Fig 3A ────────────────────────────────────────────────────────────────────
+with tab_3a:
+    brain_mw_order_raw = (
+        brain_wmae_mw[brain_wmae_mw["model"] != "Pooled"]
+        .sort_values("pooled_val", ascending=False)["model"]
+        .tolist()
+    )
+    order_3a = ["Pooled"] + brain_mw_order_raw
+
+    fig_3a = forest_plot(
+        raw_df=brain_sub,
+        meta_df=brain_wmae_mw,
+        model_order=order_3a,
+        x_col="wMAE_test",
+        title="Brain age model performance (weighted MAE)",
+        x_label="Weighted MAE (MAE ÷ age range)",
+        color_palette=COHORT_PALETTE,
+        meta_label="Overall pooled",
+        dividers=[(0.5, "solid")],
+        figsize=(11, 7),
+        gen_labels=[
+            {"label": "1st Gen", "models": BRAIN_GEN_BRAINAGE, "color": "#2171b5"},
+        ],
+    )
+    st.pyplot(fig_3a, use_container_width=True)
+    plt.close(fig_3a)
+
+# ── Fig 3B ────────────────────────────────────────────────────────────────────
+with tab_3b:
+    _B_GEN1    = ["Pyment", "Centile2", "DevBrainAge", "Kaufmann", "DBN", "PyBrainAge", "ENIGMA"]
+    _B_NEXTGEN = ["DunedinPACNI"]
+    order_3b   = ["Pooled"] + _B_NEXTGEN + _B_GEN1
+
+    fig_3b = forest_plot(
+        raw_df=brain_full,
+        meta_df=brain_pearson_mw,
+        model_order=order_3b,
+        x_col="Pearson",
+        title="Brain age model performance (Pearson r)",
+        x_label="Pearson correlation (brain age vs chronological age)",
+        color_palette=COHORT_PALETTE,
+        meta_label="Meta-analysis",
+        x_refline=0,
+        dividers=[(0.5, "solid"), (1.5, "dashed")],
+        figsize=(11, 7),
+        gen_labels=[
+            {"label": "Next Gen", "models": _B_NEXTGEN, "color": "#08306b", "pad": 0.65},
+            {"label": "1st Gen",  "models": _B_GEN1,    "color": "#2171b5"},
+        ],
+    )
+    st.pyplot(fig_3b, use_container_width=True)
+    plt.close(fig_3b)
+
+# ── Fig 3C ────────────────────────────────────────────────────────────────────
+with tab_3c:
+    fig_3c = violin_plot(
+        df=brain_b5,
+        meta=meta_brain_b5,
+        bin_levels=BRAIN_BIN5_LEVELS,
+        y_col="wMAE_test",
+        y_label="Weighted MAE",
+        model_palette=BRAIN_MODEL_PALETTE,
+        counts=brain_counts,
+        title="Brain age model performance across age groups",
+    )
+    st.pyplot(fig_3c, use_container_width=True)
+    plt.close(fig_3c)
