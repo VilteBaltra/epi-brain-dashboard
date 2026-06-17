@@ -1,9 +1,11 @@
 """
 Shared meta-analysis and plotting utilities for the dashboard.
-Provides forest_plot() and violin_plot() returning matplotlib Figure objects,
-plus all palettes, age-bin helpers, and meta-analysis functions.
+Provides forest_plot(), violin_plot(), assoc_violin_plot(), and
+assoc_forest_plot() returning matplotlib Figure objects, plus all palettes,
+age-bin helpers, and meta-analysis functions.
 """
 
+import math
 import warnings
 from typing import Optional
 
@@ -464,6 +466,244 @@ def violin_plot(
     ax.legend(handles=handles, title="Model", loc="upper left",
               bbox_to_anchor=(1.01, 1), borderaxespad=0,
               fontsize=9, title_fontsize=11, frameon=False)
+
+    plt.tight_layout()
+    return fig
+
+
+# ── Kelly colours for model combinations (many levels) ────────────────────────
+KELLY_COLORS = [
+    "#222222", "#F3C300", "#875692", "#F38400", "#A1CAF1",
+    "#BE0032", "#C2B280", "#848482", "#008856", "#E68FAC",
+    "#0067A5", "#F99379", "#604E97", "#F6A600", "#B3446C",
+    "#DCD300", "#882D17", "#8DB600", "#654522", "#E25822", "#2B3D26",
+]
+
+
+def _compute_meta_assoc(
+    df: pd.DataFrame,
+    yi_col: str = "RLM_Estimate_scaled",
+    vi_col: str = "assoc_var",
+    group_cols: list = None,
+) -> pd.DataFrame:
+    """
+    IV-weighted / MixedLM meta for association data grouped by group_cols.
+    Uses the same 4-step convergence cascade as _pool_group.
+    """
+    if group_cols is None:
+        group_cols = ["age_bin", "model_combi"]
+    valid = df.dropna(subset=[yi_col, vi_col])
+    valid = valid[valid[vi_col] > 0]
+    rows = []
+    for keys, dat in valid.groupby(group_cols, observed=True):
+        keys = keys if isinstance(keys, tuple) else (keys,)
+        mu, lb, ub, meth = _pool_group(dat, yi_col=yi_col, vi_col=vi_col)
+        row = dict(zip(group_cols, keys))
+        row.update({"pooled_beta": mu, "ci_lb": lb, "ci_ub": ub,
+                    "k": len(dat), "meta_model": meth})
+        rows.append(row)
+    out = pd.DataFrame(rows)
+    for col in group_cols:
+        if col in df.columns and hasattr(df[col], "cat"):
+            out[col] = pd.Categorical(
+                out[col], categories=df[col].cat.categories, ordered=True
+            )
+    return out
+
+
+def assoc_violin_plot(
+    df: pd.DataFrame,
+    meta: pd.DataFrame,
+    bin_levels: list,
+    counts: Optional[pd.DataFrame] = None,
+    y_col: str = "RLM_Estimate_scaled",
+    group_col: str = "model_combi",
+    title: str = "Association: brain age × epigenetic age",
+    y_label: str = "Robust standardised β",
+    model_palette: Optional[dict] = None,
+    dpi: int = 150,
+    figsize: tuple = (13, 6.5),
+) -> plt.Figure:
+    """
+    Violin + boxplot of association betas per age bin with dodged meta points.
+    No legend (too many model combinations to show).
+    Returns the matplotlib Figure (caller responsible for plt.close).
+    """
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+    x_map = {b: i for i, b in enumerate(bin_levels)}
+
+    ax.axhline(0, color="#d9d9d9", linewidth=0.8, zorder=0)
+
+    violin_x  = [i - 0.18 for i in range(len(bin_levels))]
+    bin_arrays = [
+        df.loc[df["age_bin"] == b, y_col].dropna().values
+        for b in bin_levels
+    ]
+
+    # violin
+    vp = ax.violinplot(bin_arrays, positions=violin_x,
+                       widths=0.28, showmedians=False, showextrema=False)
+    for body in vp["bodies"]:
+        body.set_facecolor("#d9d9d9")
+        body.set_alpha(1.0)
+        body.set_edgecolor("none")
+
+    # boxplot overlay
+    bp = ax.boxplot(bin_arrays, positions=violin_x,
+                    widths=0.08, patch_artist=True, showfliers=False, zorder=3)
+    for patch in bp["boxes"]:
+        patch.set_facecolor("none")
+        patch.set_edgecolor("#333333")
+        patch.set_linewidth(0.8)
+    for elem in ("whiskers", "caps", "medians"):
+        for ln in bp[elem]:
+            ln.set_color("#333333")
+            ln.set_linewidth(0.8)
+
+    # meta points dodged to the right of each bin
+    combis  = sorted(meta[group_col].dropna().unique(), key=str.lower)
+    n_c     = len(combis)
+    dodge_w = 0.45
+    offsets = np.linspace(-dodge_w / 2, dodge_w / 2, n_c) if n_c > 1 else np.array([0.0])
+    off_map = dict(zip(combis, offsets))
+
+    if model_palette is None:
+        model_palette = {c: KELLY_COLORS[i % len(KELLY_COLORS)]
+                         for i, c in enumerate(combis)}
+
+    for _, row in meta.iterrows():
+        xi = x_map.get(row["age_bin"])
+        if xi is None:
+            continue
+        col  = model_palette.get(row[group_col], "#888888")
+        xpos = xi + 0.18 + off_map.get(row[group_col], 0.0)
+        ax.scatter(xpos, row["pooled_beta"], color=col, s=18, alpha=0.5, zorder=5)
+        if not (np.isnan(row["ci_lb"]) or np.isnan(row["ci_ub"])):
+            ax.vlines(xpos, row["ci_lb"], row["ci_ub"],
+                      color=col, linewidth=0.2, alpha=0.3, zorder=4)
+
+    # y limits
+    flat    = [v for arr in bin_arrays for v in arr]
+    all_ys  = (flat
+               + list(meta["ci_lb"].dropna())
+               + list(meta["ci_ub"].dropna())
+               + list(meta["pooled_beta"].dropna()))
+    y_min   = min(all_ys) if all_ys else -0.5
+    y_max   = max(all_ys) if all_ys else  0.5
+    rng     = y_max - y_min
+
+    if counts is not None:
+        cnt_map = dict(zip(counts["age_bin"], counts["label"]))
+        for b, xi in x_map.items():
+            lbl = cnt_map.get(b)
+            if lbl:
+                ax.text(xi - 0.18, y_min - 0.035 * rng, lbl,
+                        ha="center", va="top", fontsize=9)
+
+    ax.set_xlim(-0.6, len(bin_levels) - 0.4)
+    ax.set_ylim(y_min - 0.08 * rng, y_max + 0.15 * rng)
+    ax.set_xticks(range(len(bin_levels)))
+    ax.set_xticklabels(bin_levels, rotation=30, ha="right", fontsize=10)
+    ax.set_xlabel("Developmental age group", fontsize=12, labelpad=8)
+    ax.set_ylabel(y_label, fontsize=12)
+    ax.set_title(title, fontsize=16, pad=15)
+    ax.yaxis.grid(False)
+    ax.xaxis.grid(False)
+    sns.despine(ax=ax, left=True, bottom=False)
+
+    plt.tight_layout()
+    return fig
+
+
+def assoc_forest_plot(
+    plot_est: pd.DataFrame,
+    pair_raw: pd.DataFrame,
+    epi_y_order: list,
+    facet_panels: list,
+    cohort_palette: dict,
+    title: str = "Brain-PAR – Epi-PAR associations across model combinations",
+    n_cols: int = 5,
+    dpi: int = 150,
+    figsize_per_panel: tuple = (4, 3.5),
+) -> plt.Figure:
+    """
+    Multi-panel faceted forest plot (Fig 4A).
+    One panel per brain model + one 'Epi clocks (pooled)' panel.
+    Returns the matplotlib Figure (caller responsible for plt.close).
+    """
+    n_panels = len(facet_panels)
+    n_rows   = math.ceil(n_panels / n_cols)
+    fig, axes = plt.subplots(
+        n_rows, n_cols,
+        figsize=(figsize_per_panel[0] * n_cols, figsize_per_panel[1] * n_rows),
+        squeeze=False,
+        sharey=True,
+    )
+    fig.suptitle(title, fontsize=14, y=1.01)
+
+    y_positions = {m: i for i, m in enumerate(epi_y_order)}
+    pooled_divider = y_positions.get("Pooled", 0) + 0.5
+    rng = np.random.default_rng(42)
+
+    for idx, panel in enumerate(facet_panels):
+        row_i, col_i = divmod(idx, n_cols)
+        ax = axes[row_i][col_i]
+
+        ax.axvline(0, color="#d9d9d9", linewidth=0.8, zorder=0)
+        ax.axhline(pooled_divider, color="#666666", linewidth=0.4,
+                   linestyle="solid", zorder=2)
+
+        # raw cohort scatter
+        raw_sub = pair_raw[pair_raw["brain_model_facet"] == panel]
+        for _, pt in raw_sub.iterrows():
+            yi = y_positions.get(pt["epi_model"])
+            if yi is None:
+                continue
+            col = cohort_palette.get(pt["cohort"], "#888888")
+            ax.scatter(pt["RLM_Estimate_scaled"],
+                       yi + rng.uniform(-0.12, 0.12),
+                       color=col, s=8, alpha=0.35, zorder=3)
+
+        # meta estimates
+        est_sub = plot_est[plot_est["brain_model_facet"] == panel]
+        for _, est in est_sub.iterrows():
+            yi = y_positions.get(est["epi_model"])
+            if yi is None:
+                continue
+            is_pooled = (est["epi_model"] == "Pooled")
+            ax.scatter(est["pooled_beta"], yi, color="black",
+                       s=30 if is_pooled else 18,
+                       marker="D" if is_pooled else "o", zorder=6)
+            if not (np.isnan(est["ci_lb"]) or np.isnan(est["ci_ub"])):
+                ax.hlines(yi, est["ci_lb"], est["ci_ub"],
+                          color="black",
+                          linewidth=0.8 if is_pooled else 0.4, zorder=5)
+
+        ax.set_yticks(range(len(epi_y_order)))
+        ax.set_yticklabels(epi_y_order if col_i == 0 else [], fontsize=7)
+        ax.set_title(panel, fontsize=9, pad=4)
+        ax.set_xlabel("Std. β" if row_i == n_rows - 1 else "", fontsize=8)
+        ax.xaxis.grid(True, alpha=0.25, linewidth=0.4)
+        ax.yaxis.grid(False)
+        sns.despine(ax=ax, left=True)
+
+    # hide unused panels
+    for idx in range(n_panels, n_rows * n_cols):
+        row_i, col_i = divmod(idx, n_cols)
+        axes[row_i][col_i].set_visible(False)
+
+    # cohort legend outside the figure
+    handles = [
+        mpatches.Patch(color=cohort_palette.get(c, "#888888"), label=c, alpha=0.7)
+        for c in sorted(cohort_palette)
+    ]
+    handles.append(
+        plt.Line2D([0], [0], marker="D", color="black", markerfacecolor="black",
+                   markersize=7, linestyle="-", label="Overall pooled")
+    )
+    fig.legend(handles=handles, title="Source", loc="center right",
+               bbox_to_anchor=(1.12, 0.5), fontsize=7,
+               title_fontsize=9, frameon=False)
 
     plt.tight_layout()
     return fig

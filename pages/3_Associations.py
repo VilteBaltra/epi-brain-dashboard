@@ -1,0 +1,775 @@
+import math
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+from plot_helpers import (
+    COHORT_PALETTE, KELLY_COLORS,
+    BRAIN_BIN5_LEVELS, _bin_brain5,
+    _compute_meta_assoc, _pool_group,
+    _k_counts,
+)
+
+st.set_page_config(page_title="Brain–Epi Associations", layout="wide")
+
+
+# ── Load & preprocess ──────────────────────────────────────────────────────────
+@st.cache_data
+def load_data():
+    df = pd.read_csv("data/mod2_eff2.csv")
+    df["assoc_var"] = df["RLM_SE_coeftest_HC3_scaled"] ** 2
+    df["age_bin"] = pd.Categorical(
+        df["mean_age"].map(_bin_brain5),
+        categories=BRAIN_BIN5_LEVELS, ordered=True,
+    )
+    return df
+
+df = load_data()
+
+st.title("Brain–Epigenetic Age Associations")
+
+# ── Sidebar filters ────────────────────────────────────────────────────────────
+st.sidebar.header("Filters")
+
+cohort_f = st.sidebar.multiselect(
+    "Cohort",
+    df["cohort"].dropna().unique(),
+    df["cohort"].dropna().unique(),
+)
+brain_model_f = st.sidebar.multiselect(
+    "Brain Model",
+    sorted(df["brain_model"].dropna().unique()),
+    sorted(df["brain_model"].dropna().unique()),
+)
+epi_model_f = st.sidebar.multiselect(
+    "Epi Model",
+    sorted(df["epi_model"].dropna().unique()),
+    sorted(df["epi_model"].dropna().unique()),
+)
+
+filtered = df[
+    (df["cohort"].isin(cohort_f)) &
+    (df["brain_model"].isin(brain_model_f)) &
+    (df["epi_model"].isin(epi_model_f))
+].copy()
+
+# ── KPIs ───────────────────────────────────────────────────────────────────────
+st.subheader("Summary")
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("Effect sizes", len(filtered))
+c2.metric("Cohorts",      filtered["cohort"].nunique())
+c3.metric("Brain models", filtered["brain_model"].nunique())
+c4.metric("Epi models",   filtered["epi_model"].nunique())
+
+st.dataframe(
+    filtered[["cohort", "timepoint", "brain_model", "epi_model",
+              "RLM_Estimate_scaled", "RLM_SE_coeftest_HC3_scaled"]]
+    .reset_index(drop=True),
+    use_container_width=True,
+)
+
+
+# ── Meta-analysis (cached) ─────────────────────────────────────────────────────
+@st.cache_data(show_spinner=False)
+def _compute_assoc_pub_data(raw_df: pd.DataFrame):
+    d = raw_df.copy()
+
+    # Fixed model orderings matching paper (R code)
+    _GEN1_ASSOC  = sorted(["AltumAge", "CorticalClock", "Hannum", "Horvath2013",
+                            "PCBrainAge", "PedBE", "Wu", "ZhangBLUP", "ZhangEN",
+                            "cAge", "skinHorvath"], key=str.lower)
+    _GEN2P_ASSOC = sorted(["AdaptAge", "DamAge", "DNAmTL", "DunedinPACE",
+                            "PCGrimAge", "PhenoAge"], key=str.lower)
+    _BRAIN_ORDER = ["Centile2", "DBN", "DevBrainAge", "ENIGMA", "Kaufmann",
+                    "PyBrainAge", "Pyment", "DunedinPACNI"]
+
+    # ── Fig 4A ────────────────────────────────────────────────────────────────
+    pair_meta    = _compute_meta_assoc(d, group_cols=["brain_model", "epi_model"])
+    brain_margin = _compute_meta_assoc(d, group_cols=["brain_model"])
+    brain_margin["epi_model"] = "Pooled"
+
+    epi_margin   = _compute_meta_assoc(d, group_cols=["epi_model"])
+    epi_margin["brain_model"] = "Pooled"
+
+    _gdata = d.dropna(subset=["RLM_Estimate_scaled", "assoc_var"])
+    _gdata = _gdata[_gdata["assoc_var"] > 0]
+    _gmu, _glb, _gub, _gmeth = _pool_group(
+        _gdata, yi_col="RLM_Estimate_scaled", vi_col="assoc_var"
+    )
+    grand_row = pd.DataFrame([{
+        "brain_model": "Pooled", "epi_model": "Pooled",
+        "pooled_beta": _gmu, "ci_lb": _glb, "ci_ub": _gub,
+        "k": len(_gdata), "meta_model": _gmeth,
+    }])
+
+    plot_est = pd.concat(
+        [pair_meta, brain_margin, epi_margin, grand_row], ignore_index=True
+    )
+    plot_est["brain_model_facet"] = plot_est["brain_model"].apply(
+        lambda x: "Epi clocks (pooled)" if x == "Pooled" else x
+    )
+
+    pair_raw = d[["cohort", "brain_model", "epi_model",
+                  "RLM_Estimate_scaled"]].dropna().copy()
+    pair_raw["brain_model_facet"] = pair_raw["brain_model"]
+
+    # Fixed epi y-order: Pooled at bottom (y=0), Gen2+ above (reversed alpha),
+    # Gen1 at top (reversed alpha) — matches R: epi_levels <- c("Pooled", rev(gen2plus), rev(gen1))
+    present_epi = set(pair_raw["epi_model"].dropna().unique())
+    gen1_p  = [m for m in _GEN1_ASSOC  if m in present_epi]
+    gen2_p  = [m for m in _GEN2P_ASSOC if m in present_epi]
+    extra_p = [m for m in sorted(present_epi)
+               if m not in _GEN1_ASSOC and m not in _GEN2P_ASSOC]
+    epi_y_order = ["Pooled"] + list(reversed(gen2_p)) + list(reversed(gen1_p)) + extra_p
+
+    # Divider y-positions
+    pooled_div_y = 0.5                        # solid:  Pooled / Gen2+
+    gen_div_y    = 0.5 + len(gen2_p)          # dashed: Gen2+  / Gen1
+
+    # Fixed brain panel order to match paper (left → right)
+    present_brain = {m for m in plot_est["brain_model_facet"].unique()
+                     if m != "Epi clocks (pooled)"}
+    brain_panels_ordered = [m for m in _BRAIN_ORDER if m in present_brain]
+    remaining_brain = [m for m in sorted(present_brain) if m not in _BRAIN_ORDER]
+    facet_panels = brain_panels_ordered + remaining_brain + ["Epi clocks (pooled)"]
+
+    # ── Fig 4C ────────────────────────────────────────────────────────────────
+    assoc_meta_violin = _compute_meta_assoc(d, group_cols=["age_bin", "model_combi"])
+    counts = _k_counts(d)
+
+    all_combis    = sorted(assoc_meta_violin["model_combi"].unique(), key=str.lower)
+    combi_palette = {
+        c: KELLY_COLORS[i % len(KELLY_COLORS)]
+        for i, c in enumerate(all_combis)
+    }
+
+    return (plot_est, pair_raw, epi_y_order, facet_panels,
+            pooled_div_y, gen_div_y,
+            assoc_meta_violin, counts, combi_palette)
+
+
+with st.spinner("Running meta-analyses…"):
+    (plot_est, pair_raw, epi_y_order, facet_panels,
+     pooled_div_y, gen_div_y,
+     assoc_meta_violin, counts, combi_palette) = _compute_assoc_pub_data(filtered)
+
+
+# ── Publication figures ────────────────────────────────────────────────────────
+st.divider()
+st.header("Publication Figures")
+st.caption("Replicating paper figures — responds to sidebar filters above.")
+
+# ── Shared focus selector (applies to both Fig 4A and Fig 4C) ─────────────────
+_fc1, _fc2 = st.columns([1, 2])
+_focus_type = _fc1.radio(
+    "Focus on",
+    ["All models", "One brain model", "One epi clock"],
+    index=0,
+)
+if _focus_type == "One brain model":
+    _brain_opts = [p for p in facet_panels if p != "Epi clocks (pooled)"]
+    _sel_brain  = _fc2.selectbox("Brain model", _brain_opts)
+    _sel_epi    = None
+elif _focus_type == "One epi clock":
+    _epi_opts  = [m for m in epi_y_order if m != "Pooled"]
+    _sel_epi   = _fc2.selectbox("Epi clock", _epi_opts)
+    _sel_brain = None
+else:
+    _sel_brain = None
+    _sel_epi   = None
+
+# Derive display variables for Fig 4A
+if _focus_type == "One brain model":
+    _disp_panels = [_sel_brain, "Epi clocks (pooled)"]
+    _disp_raw    = pair_raw
+    _disp_est    = plot_est
+    _disp_y      = epi_y_order
+elif _focus_type == "One epi clock":
+    _disp_panels = facet_panels
+    _disp_raw    = pair_raw[pair_raw["epi_model"] == _sel_epi]
+    _disp_est    = plot_est[plot_est["epi_model"].isin([_sel_epi, "Pooled"])]
+    _disp_y      = ["Pooled", _sel_epi]
+else:
+    _disp_panels = facet_panels
+    _disp_raw    = pair_raw
+    _disp_est    = plot_est
+    _disp_y      = epi_y_order
+
+# Derive filtered data for Fig 4C
+if _focus_type == "One brain model":
+    _raw_4c  = filtered[filtered["brain_model"] == _sel_brain]
+    _meta_4c = assoc_meta_violin[
+        assoc_meta_violin["model_combi"].isin(
+            filtered[filtered["brain_model"] == _sel_brain]["model_combi"].dropna().unique()
+        )
+    ]
+elif _focus_type == "One epi clock":
+    _raw_4c  = filtered[filtered["epi_model"] == _sel_epi]
+    _meta_4c = assoc_meta_violin[
+        assoc_meta_violin["model_combi"].isin(
+            filtered[filtered["epi_model"] == _sel_epi]["model_combi"].dropna().unique()
+        )
+    ]
+else:
+    _raw_4c  = filtered
+    _meta_4c = assoc_meta_violin
+
+# ── Fig 4B chord diagram function ─────────────────────────────────────────────
+def _make_chord_fig(pm, brain_models, epi_models):
+    """
+    Chord diagram matching R layout:
+      Brain models: upper-right → top → upper-left arc  (25° → 210° CCW)
+      Epi clocks:   lower-left → bottom → lower-right arc (215° → 380° CCW, wraps past 0°)
+    Bezier curves connect pairs; colour = sign of pooled β, width = |β|.
+    Labels are radial (pointing outward from centre) with readable orientation.
+    """
+    pm = pm.dropna(subset=["pooled_beta"]).copy()
+    pm = pm[pm["brain_model"].isin(brain_models) & pm["epi_model"].isin(epi_models)]
+    if pm.empty:
+        return go.Figure()
+
+    # ── Colour palettes ────────────────────────────────────────────────────
+    _BRAIN_PAL = {
+        "Centile2":     "#8B1A1A",
+        "DBN":          "#1874CD",
+        "DevBrainAge":  "#20B2AA",
+        "DunedinPACNI": "#2E8B57",
+        "ENIGMA":       "#9370DB",
+        "Kaufmann":     "#E08B00",
+        "PyBrainAge":   "#6B238E",
+        "Pyment":       "#4BA3C7",
+    }
+    for i, m in enumerate(brain_models):
+        if m not in _BRAIN_PAL:
+            _BRAIN_PAL[m] = KELLY_COLORS[i % len(KELLY_COLORS)]
+    _EPI_PAL = {m: KELLY_COLORS[i % len(KELLY_COLORS)] for i, m in enumerate(epi_models)}
+
+    # ── Geometry ───────────────────────────────────────────────────────────
+    OUTER_R = 1.0
+    ARC_T   = 0.08
+    INNER_R = OUTER_R - ARC_T
+    LABEL_R = OUTER_R + 0.26
+    SEG_GAP = np.radians(0.8)
+
+    # Brain: 25° → 210° counterclockwise through the top
+    # Epi:  215° → 380° counterclockwise through the bottom (380° = 20° past 0°)
+    B_START, B_END = np.radians(25),  np.radians(210)
+    E_START, E_END = np.radians(215), np.radians(380)
+
+    def assign_arcs(models, arc_s, arc_e):
+        n = len(models)
+        if n == 0:
+            return {}
+        span = (arc_e - arc_s - (n - 1) * SEG_GAP) / n
+        arcs = {}
+        for i, m in enumerate(models):
+            s = arc_s + i * (span + SEG_GAP)
+            e = s + span
+            arcs[m] = (s, e, (s + e) / 2)
+        return arcs
+
+    brain_arcs = assign_arcs(brain_models, B_START, B_END)
+    epi_arcs   = assign_arcs(epi_models,   E_START, E_END)
+
+    fig = go.Figure()
+
+    # ── Outer arc segments ─────────────────────────────────────────────────
+    def add_arc_seg(m, s, e, color):
+        ang = np.linspace(s, e, 60)
+        xo, yo = OUTER_R * np.cos(ang), OUTER_R * np.sin(ang)
+        xi, yi = INNER_R * np.cos(ang[::-1]), INNER_R * np.sin(ang[::-1])
+        fig.add_trace(go.Scatter(
+            x=list(xo) + list(xi) + [xo[0]],
+            y=list(yo) + list(yi) + [yo[0]],
+            fill="toself", fillcolor=color,
+            line=dict(color=color, width=0.3),
+            mode="lines", showlegend=False,
+            hoverinfo="name", name=m,
+        ))
+
+    for m, (s, e, _) in brain_arcs.items():
+        add_arc_seg(m, s, e, _BRAIN_PAL.get(m, "#888"))
+    for m, (s, e, _) in epi_arcs.items():
+        add_arc_seg(m, s, e, _EPI_PAL.get(m, "#888"))
+
+    # ── Bezier chords ──────────────────────────────────────────────────────
+    beta_max = pm["pooled_beta"].abs().max()
+    pm_sorted = pm.reindex(pm["pooled_beta"].abs().sort_values(ascending=True).index)
+    t    = np.linspace(0, 1, 80)
+    CTRL = 0.15
+
+    for _, row in pm_sorted.iterrows():
+        bm, em, beta = row["brain_model"], row["epi_model"], row["pooled_beta"]
+        if bm not in brain_arcs or em not in epi_arcs:
+            continue
+        bx = INNER_R * np.cos(brain_arcs[bm][2])
+        by = INNER_R * np.sin(brain_arcs[bm][2])
+        ex = INNER_R * np.cos(epi_arcs[em][2])
+        ey = INNER_R * np.sin(epi_arcs[em][2])
+        xb = (1-t)**3*bx + 3*(1-t)**2*t*(CTRL*bx) + 3*(1-t)*t**2*(CTRL*ex) + t**3*ex
+        yb = (1-t)**3*by + 3*(1-t)**2*t*(CTRL*by) + 3*(1-t)*t**2*(CTRL*ey) + t**3*ey
+        abs_b = abs(beta)
+        alpha = 0.10 + 0.40 * (abs_b / beta_max)
+        width = 0.3  + 2.5  * (abs_b / beta_max)
+        color = (f"rgba(91,155,213,{alpha:.2f})" if beta > 0
+                 else f"rgba(244,130,100,{alpha:.2f})")
+        fig.add_trace(go.Scatter(
+            x=xb, y=yb, mode="lines",
+            line=dict(color=color, width=width),
+            showlegend=False,
+            hovertemplate=f"<b>{bm} – {em}</b><br>β = {beta:.3f}<extra></extra>",
+        ))
+
+    # ── Radial labels (perpendicular to arc edge) ──────────────────────────
+    # Radial labels, always readable. Annotation point is placed just outside
+    # the arc; text starts there and extends outward.
+    # Right half (deg < 90 or deg > 270): text reads outward, first letter nearest arc.
+    # Left half (90 ≤ deg ≤ 270): flip 180° so it stays readable; last letter nearest arc.
+    def add_label(m, mid, label_r, fsize=9):
+        deg = np.degrees(mid % (2 * np.pi))   # 0–360 standard CCW
+        x   = label_r * np.cos(mid)
+        y   = label_r * np.sin(mid)
+        # Plotly textangle is clockwise; standard deg is CCW, so negate.
+        # Right half: first letter near arc, text reads outward.
+        # Left half: flip 180° so text stays readable; last letter near arc.
+        if deg < 90 or deg > 270:
+            tangle, ax = -deg, "center"
+        else:
+            tangle, ax = 180 - deg, "center"
+        fig.add_annotation(
+            x=x, y=y, text=m, showarrow=False,
+            font=dict(size=fsize, color="#333333"),
+            textangle=tangle, xanchor=ax, yanchor="middle",
+        )
+
+    for m, (_, _, mid) in brain_arcs.items():
+        add_label(m, mid, LABEL_R, fsize=11)
+
+    # Epi labels: all at same radius — radial orientation prevents collision
+    for m, (_, _, mid) in epi_arcs.items():
+        add_label(m, mid, LABEL_R, fsize=10)
+
+    # ── Legend ─────────────────────────────────────────────────────────────
+    for name, col in [("Positive β", "rgba(91,155,213,0.85)"),
+                      ("Negative β", "rgba(244,130,100,0.85)")]:
+        fig.add_trace(go.Scatter(
+            x=[None], y=[None], mode="markers",
+            marker=dict(color=col, size=10, symbol="square"),
+            name=name, showlegend=True,
+            legendgroup="dir", legendgrouptitle_text="Direction",
+        ))
+
+    # Strength legend: |β|=0 (no symbol), then min non-zero and max as lines
+    _b_abs    = pm["pooled_beta"].abs().dropna()
+    _b_max    = _b_abs.max()
+    _b_nonzero = _b_abs[_b_abs > 0]
+    _b_min_nz = _b_nonzero.min() if len(_b_nonzero) > 0 else _b_max
+    # Zero entry — invisible marker so only label text appears
+    fig.add_trace(go.Scatter(
+        x=[None], y=[None], mode="markers",
+        marker=dict(color="rgba(0,0,0,0)", size=0, line=dict(width=0)),
+        name="|β| = 0", showlegend=True,
+        legendgroup="strength", legendgrouptitle_text="Strength",
+    ))
+    for abs_b in [_b_min_nz, _b_max]:
+        w = 1 + 5 * (abs_b / _b_max)   # scaled for legend visibility (1–6 px)
+        fig.add_trace(go.Scatter(
+            x=[None], y=[None], mode="lines",
+            line=dict(color="#555555", width=w),
+            name=f"|β| = {abs_b:.3f}", showlegend=True,
+            legendgroup="strength", legendgrouptitle_text="Strength",
+        ))
+
+    fig.update_layout(
+        height=680,
+        # scaleanchor ensures a perfect circle regardless of container width
+        xaxis=dict(visible=False, range=[-1.42, 1.42]),
+        yaxis=dict(visible=False, range=[-1.42, 1.42], scaleanchor="x", scaleratio=1),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        legend=dict(
+            x=1.01, y=0.5, xanchor="left", yanchor="middle",
+            font=dict(size=10),
+            tracegroupgap=10,
+        ),
+        margin=dict(l=20, r=160, t=10, b=10),
+    )
+    return fig
+
+
+tab_4a, tab_4b, tab_4c = st.tabs([
+    "Fig 4A — Associations by model pair",
+    "Fig 4B — Association structure (chord)",
+    "Fig 4C — Associations by age group",
+])
+
+
+# ── Fig 4A ────────────────────────────────────────────────────────────────────
+with tab_4a:
+    st.caption(
+        "Each panel shows one brain model. Coloured dots = raw cohort-level associations "
+        "(hover for details); black diamonds = pooled meta-analysis estimates per epi clock. "
+        "Final panel pools across all brain models."
+    )
+
+    n_panels = len(_disp_panels)
+    n_cols   = min(5, n_panels)
+    n_rows   = math.ceil(n_panels / n_cols)
+
+    fig_4a = make_subplots(
+        rows=n_rows, cols=n_cols,
+        subplot_titles=_disp_panels,
+        shared_yaxes=True,
+        horizontal_spacing=0.03,
+        vertical_spacing=0.14,
+    )
+
+    y_pos         = {m: i for i, m in enumerate(_disp_y)}
+    shown_cohorts = set()
+    rng           = np.random.default_rng(42)
+
+    # Compute a sensible x-limit from 99th percentile of absolute betas
+    _all_abs = _disp_raw["RLM_Estimate_scaled"].dropna().abs()
+    _x_lim   = float(np.clip(_all_abs.quantile(0.99) * 1.25, 0.25, 0.6)) if not _all_abs.empty else 0.3
+
+    for idx, panel in enumerate(_disp_panels):
+        r = idx // n_cols + 1
+        c = idx % n_cols + 1
+
+        # vertical reference line at x = 0 — drawn below all traces
+        fig_4a.add_shape(
+            type="line",
+            x0=0, x1=0,
+            y0=-0.5, y1=len(epi_y_order) - 0.4,
+            line=dict(color="#999999", width=1.2),
+            layer="below",
+            row=r, col=c,
+        )
+
+        # solid divider: Pooled / Gen2+
+        fig_4a.add_hline(
+            y=pooled_div_y,
+            line_color="#555555", line_width=1.0,
+            row=r, col=c,
+        )
+        # dashed divider: Gen2+ / Gen1
+        if gen_div_y > pooled_div_y:
+            fig_4a.add_hline(
+                y=gen_div_y,
+                line_color="#555555", line_width=0.8,
+                line_dash="dash",
+                row=r, col=c,
+            )
+
+        # raw cohort scatter
+        raw_sub = _disp_raw[_disp_raw["brain_model_facet"] == panel].copy()
+        raw_sub["y_num"] = raw_sub["epi_model"].map(y_pos)
+        raw_sub = raw_sub.dropna(subset=["y_num", "RLM_Estimate_scaled"])
+        raw_sub["y_jitter"] = (
+            raw_sub["y_num"] + rng.uniform(-0.18, 0.18, len(raw_sub))
+        )
+
+        for cohort in sorted(raw_sub["cohort"].dropna().unique()):
+            sub  = raw_sub[raw_sub["cohort"] == cohort]
+            show = cohort not in shown_cohorts
+            fig_4a.add_trace(go.Scatter(
+                x=sub["RLM_Estimate_scaled"],
+                y=sub["y_jitter"],
+                mode="markers",
+                marker=dict(
+                    color=COHORT_PALETTE.get(cohort, "#888888"),
+                    size=5, opacity=0.55,
+                ),
+                name=cohort,
+                legendgroup=cohort,
+                showlegend=show,
+                hovertemplate=(
+                    f"<b>{cohort}</b><br>"
+                    "Epi: %{customdata}<br>"
+                    "β = %{x:.3f}<extra></extra>"
+                ),
+                customdata=sub["epi_model"].values,
+            ), row=r, col=c)
+            shown_cohorts.add(cohort)
+
+        # meta estimates
+        est_sub = _disp_est[_disp_est["brain_model_facet"] == panel]
+        for _, est in est_sub.iterrows():
+            yi = y_pos.get(est["epi_model"])
+            if yi is None:
+                continue
+            is_pooled = (est["epi_model"] == "Pooled")
+
+            # CI line
+            if not (pd.isna(est["ci_lb"]) or pd.isna(est["ci_ub"])):
+                fig_4a.add_trace(go.Scatter(
+                    x=[est["ci_lb"], est["ci_ub"]],
+                    y=[yi, yi],
+                    mode="lines",
+                    line=dict(color="black", width=2.5 if is_pooled else 1.0),
+                    showlegend=False,
+                    hoverinfo="skip",
+                ), row=r, col=c)
+
+            # point estimate (diamond for pooled, filled circle for per-epi)
+            fig_4a.add_trace(go.Scatter(
+                x=[est["pooled_beta"]],
+                y=[yi],
+                mode="markers",
+                marker=dict(
+                    color="black",
+                    symbol="diamond" if is_pooled else "circle",
+                    size=10 if is_pooled else 6,
+                ),
+                name="Overall pooled",
+                legendgroup="meta",
+                showlegend=False,
+                hovertemplate=(
+                    f"<b>{est['epi_model']}</b><br>"
+                    f"β = {est['pooled_beta']:.3f}<br>"
+                    f"95% CI: [{est['ci_lb']:.3f}, {est['ci_ub']:.3f}]"
+                    "<extra>Meta</extra>"
+                ),
+            ), row=r, col=c)
+
+    # "Overall pooled" legend entry — added last so it appears at the bottom
+    fig_4a.add_trace(go.Scatter(
+        x=[None], y=[None],
+        mode="markers",
+        marker=dict(color="black", symbol="diamond", size=10),
+        name="Overall pooled",
+        legendgroup="meta",
+        showlegend=True,
+    ))
+
+    # y-axis tick labels (shared) — only show on leftmost column
+    fig_4a.update_yaxes(
+        tickmode="array",
+        tickvals=list(y_pos.values()),
+        ticktext=list(y_pos.keys()),
+        tickfont=dict(size=8),
+        range=[-0.6, len(_disp_y) - 0.4],
+    )
+
+    # Set consistent x-range per panel (data-driven, no hardcoded ±1)
+    fig_4a.update_xaxes(
+        range=[-_x_lim, _x_lim],
+        tickfont=dict(size=8),
+        title_font=dict(size=8),
+        zeroline=False,
+    )
+    fig_4a.update_annotations(font_size=10)  # subplot titles
+
+    fig_4a.update_layout(
+        height=n_rows * 500,
+        title=dict(
+            text="Brain-PAR – Epi-PAR associations across model combinations",
+            font=dict(size=14),
+        ),
+        legend=dict(
+            title="Cohort",
+            x=1.01, y=0.5,
+            xanchor="left",
+            font=dict(size=8),
+            itemsizing="constant",
+            tracegroupgap=2,
+        ),
+        margin=dict(l=130, r=160, t=80, b=40),
+    )
+
+    st.plotly_chart(fig_4a, use_container_width=True)
+
+
+# ── Fig 4B ────────────────────────────────────────────────────────────────────
+with tab_4b:
+    st.caption(
+        "Chord diagram of Brain-PAR – Epi-PAR pooled associations. "
+        "Upper arc = brain models (coloured segments); lower arc = epi clocks. "
+        "Chord width ∝ |β|; blue = positive β, salmon = negative β. "
+        "Hover over a chord for exact values."
+    )
+
+    # ── Model order matches the R paper figure ─────────────────────────────
+    # Brain: Pyment → ENIGMA → Kaufmann → DBN → DunedinPACNI → DevBrainAge
+    #         → PyBrainAge → Centile2  (upper-right arc, CCW through top to upper-left)
+    _BRAIN_ORDER_4B = [
+        "Pyment", "ENIGMA", "Kaufmann", "DBN",
+        "DunedinPACNI", "DevBrainAge", "PyBrainAge", "Centile2",
+    ]
+    # Epi: DunedinPACE → … → DNAmTL  (lower-left arc, CCW through bottom to lower-right)
+    _EPI_ORDER_4B = [
+        "DunedinPACE", "PCGrimAge", "PCBrainAge", "CorticalClock",
+        "AltumAge", "skinHorvath", "DamAge", "ZhangBLUP",
+        "Horvath2013", "PhenoAge", "ZhangEN", "Wu",
+        "cAge", "PedBE", "AdaptAge", "Hannum", "DNAmTL",
+    ]
+
+    _present_b = set(plot_est.loc[plot_est["brain_model"] != "Pooled", "brain_model"].dropna())
+    _present_e = set(plot_est.loc[plot_est["epi_model"]   != "Pooled", "epi_model"].dropna())
+
+    # Ordered lists filtered to models actually present; append any extras at end
+    _brain_4b = [m for m in _BRAIN_ORDER_4B if m in _present_b]
+    _brain_4b += [m for m in sorted(_present_b) if m not in set(_BRAIN_ORDER_4B)]
+    _epi_4b   = [m for m in _EPI_ORDER_4B   if m in _present_e]
+    _epi_4b   += [m for m in sorted(_present_e) if m not in set(_EPI_ORDER_4B)]
+
+    _pm_4b = plot_est[
+        (plot_est["brain_model"] != "Pooled") &
+        (plot_est["epi_model"]   != "Pooled")
+    ].copy()
+
+    # Apply Focus-on filter
+    if _focus_type == "One brain model" and _sel_brain:
+        _pm_4b    = _pm_4b[_pm_4b["brain_model"] == _sel_brain]
+        _brain_4b = [m for m in _brain_4b if m == _sel_brain]
+    elif _focus_type == "One epi clock" and _sel_epi:
+        _pm_4b  = _pm_4b[_pm_4b["epi_model"] == _sel_epi]
+        _epi_4b = [m for m in _epi_4b if m == _sel_epi]
+
+    fig_4b = _make_chord_fig(_pm_4b, _brain_4b, _epi_4b)
+    st.plotly_chart(fig_4b, use_container_width=True)
+
+
+# ── Fig 4C ────────────────────────────────────────────────────────────────────
+with tab_4c:
+    st.caption(
+        "Violin + boxplot of association betas by brain developmental age group. "
+        "Coloured dots = pooled meta-analysis estimates per model combination "
+        "(hover for details; no legend — too many combinations)."
+    )
+
+    fig_4c = go.Figure()
+
+    bin_x = {b: i for i, b in enumerate(BRAIN_BIN5_LEVELS)}
+    BOX_OFF  = -0.22   # box shifted left of centre
+    DOT_START = 0.05   # meta dots start just right of centre
+    DOT_END   = 0.40   # meta dots end here
+
+    # y=0 reference (behind everything)
+    fig_4c.add_shape(
+        type="line", x0=-0.5, x1=len(BRAIN_BIN5_LEVELS) - 0.5,
+        y0=0, y1=0, layer="below",
+        line=dict(color="#cccccc", width=1.0),
+    )
+
+    # ── Violin (grey shading, behind box) ─────────────────────────────────
+    for b in BRAIN_BIN5_LEVELS:
+        xi     = bin_x[b]
+        subset = _raw_4c.loc[_raw_4c["age_bin"] == b, "RLM_Estimate_scaled"].dropna()
+        if subset.empty:
+            continue
+        fig_4c.add_trace(go.Violin(
+            y=subset,
+            x=[xi + BOX_OFF] * len(subset),
+            name=b,
+            fillcolor="rgba(200,200,200,0.45)",
+            line=dict(color="rgba(160,160,160,0.4)", width=0.5),
+            points=False,
+            box_visible=False,
+            meanline_visible=False,
+            width=0.55,
+            showlegend=False,
+            hoverinfo="skip",
+        ))
+
+    # ── Box plot, offset left (on top of violin) ───────────────────────────
+    for b in BRAIN_BIN5_LEVELS:
+        xi     = bin_x[b]
+        subset = _raw_4c.loc[_raw_4c["age_bin"] == b, "RLM_Estimate_scaled"].dropna()
+        if subset.empty:
+            continue
+        fig_4c.add_trace(go.Box(
+            y=subset,
+            x=[xi + BOX_OFF] * len(subset),
+            name=b,
+            boxpoints=False,
+            fillcolor="rgba(240,240,240,0.8)",
+            line=dict(color="#222222", width=1.5),
+            width=0.22,
+            showlegend=False,
+            hoverinfo="skip",
+        ))
+
+    # ── Meta estimates + vertical CIs, offset right ───────────────────────
+    all_combis = sorted(_meta_4c["model_combi"].dropna().unique(), key=str.lower)
+    n_c        = len(all_combis)
+    offsets    = np.linspace(DOT_START, DOT_END, n_c) if n_c > 1 else [(DOT_START + DOT_END) / 2]
+    off_map    = dict(zip(all_combis, offsets))
+
+    for combi in all_combis:
+        sub = _meta_4c[_meta_4c["model_combi"] == combi]
+        if sub.empty:
+            continue
+        color = combi_palette.get(combi, "#888888")
+        off   = off_map[combi]
+
+        rows = [
+            (row["age_bin"], row["pooled_beta"],
+             row.get("ci_lb", float("nan")), row.get("ci_ub", float("nan")))
+            for _, row in sub.iterrows() if row["age_bin"] in bin_x
+        ]
+        if not rows:
+            continue
+
+        _CI_CAP = 0.5   # don't display CI arms wider than this
+        xs     = [bin_x[b] + off           for b, _, _, _ in rows]
+        ys     = [beta                      for _, beta, _, _ in rows]
+        e_hi   = [min(ub - beta, _CI_CAP) if pd.notna(ub) else 0 for _, beta, _, ub in rows]
+        e_lo   = [min(beta - lb, _CI_CAP) if pd.notna(lb) else 0 for _, beta, lb, _ in rows]
+
+        fig_4c.add_trace(go.Scatter(
+            x=xs, y=ys,
+            mode="markers",
+            marker=dict(color=color, size=5, opacity=0.85,
+                        line=dict(color="white", width=0.6)),
+            error_y=dict(
+                type="data", symmetric=False,
+                array=e_hi, arrayminus=e_lo,
+                color="rgba(180,180,180,0.25)", thickness=0.8, width=0,
+            ),
+            name=combi,
+            showlegend=False,
+            hovertemplate=(
+                f"<b>{combi}</b><br>"
+                "Age: %{customdata}<br>"
+                "β = %{y:.3f}<extra>Meta</extra>"
+            ),
+            customdata=[b for b, _, _, _ in rows],
+        ))
+
+    # ── k= annotations ────────────────────────────────────────────────────
+    cnt_map = dict(zip(counts["age_bin"], counts["label"]))
+    y_floor = _raw_4c["RLM_Estimate_scaled"].min(skipna=True) if not _raw_4c.empty else -0.3
+    for b, xi in bin_x.items():
+        lbl = cnt_map.get(b)
+        if lbl:
+            fig_4c.add_annotation(
+                x=xi, y=y_floor - 0.05,
+                text=lbl, showarrow=False,
+                font=dict(size=10), yanchor="top",
+            )
+
+    fig_4c.update_xaxes(
+        tickmode="array",
+        tickvals=list(bin_x.values()),
+        ticktext=list(bin_x.keys()),
+        tickangle=30,
+        title_text="Developmental age group",
+    )
+    fig_4c.update_yaxes(title_text="Robust standardised β", range=[-0.55, 0.55])
+    fig_4c.update_layout(
+        title="Brain–Epi PAR associations across developmental age groups",
+        height=600,
+        showlegend=False,
+        margin=dict(l=60, r=40, t=60, b=110),
+        boxmode="overlay",
+        violinmode="overlay",
+    )
+
+    st.plotly_chart(fig_4c, use_container_width=True)
