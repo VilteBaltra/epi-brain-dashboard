@@ -44,12 +44,6 @@ cohort_f = st.sidebar.multiselect(
     df["cohort"].dropna().unique()
 )
 
-domain_f = st.sidebar.multiselect(
-    "Domain",
-    df["domain"].dropna().unique(),
-    df["domain"].dropna().unique()
-)
-
 timepoint_f = st.sidebar.multiselect(
     "Timepoint",
     df["timepoint"].dropna().unique(),
@@ -62,17 +56,11 @@ model_f = st.sidebar.multiselect(
     df["model"].dropna().unique()
 )
 
-metric = st.sidebar.selectbox(
-    "Metric",
-    ["MAE", "RMSE", "R2", "Pearson", "Spearman", "wMAE_test", "nRMSE"]
-)
-
 # -------------------------
 # FILTER DATA
 # -------------------------
 filtered = df[
     (df["cohort"].isin(cohort_f)) &
-    (df["domain"].isin(domain_f)) &
     (df["timepoint"].isin(timepoint_f)) &
     (df["model"].isin(model_f))
 ].copy()
@@ -103,7 +91,14 @@ st.dataframe(filtered, use_container_width=True)
 # =========================================================
 # 📊 SIMPLE MODEL PLOT
 # =========================================================
-st.subheader(f"{metric} by Model")
+_col_title, _col_metric = st.columns([4, 1])
+_col_title.subheader("Model Performance")
+metric = _col_metric.selectbox(
+    "Metric",
+    ["MAE", "RMSE", "R2", "Pearson", "Spearman", "wMAE_test", "nRMSE"],
+    key="brain_metric",
+    label_visibility="collapsed",
+)
 
 fig_box = px.box(
     filtered,

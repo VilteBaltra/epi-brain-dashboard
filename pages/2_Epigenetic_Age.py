@@ -47,11 +47,6 @@ model_f = st.sidebar.multiselect(
     df["model"].dropna().unique()
 )
 
-metric = st.sidebar.selectbox(
-    "Metric",
-    ["MAE", "RMSE", "R2", "Pearson", "Spearman", "wMAE_test", "nRMSE"]
-)
-
 filtered = df[
     (df["cohort"].isin(cohort_f)) &
     (df["timepoint"].isin(timepoint_f)) &
@@ -75,6 +70,15 @@ c4.metric("R2", round(filtered["R2"].mean(), 3))
 
 st.dataframe(filtered, use_container_width=True)
 
+_col_title, _col_metric = st.columns([4, 1])
+_col_title.subheader("Model Performance")
+metric = _col_metric.selectbox(
+    "Metric",
+    ["MAE", "RMSE", "R2", "Pearson", "Spearman", "wMAE_test", "nRMSE"],
+    key="epi_metric",
+    label_visibility="collapsed",
+)
+
 fig_box = px.box(
     filtered,
     x="model",
@@ -85,10 +89,20 @@ fig_box = px.box(
 
 st.plotly_chart(fig_box, use_container_width=True)
 
-def rma_mv_exact(df):
-    df = df.dropna(subset=["wMAE_test", "wMAE_SE_boot"]).copy()
-    yi = df["wMAE_test"].values
-    vi = df["wMAE_SE_boot"].values ** 2
+se_map = {
+    "MAE":      "MAE_SE_boot",
+    "RMSE":     "RMSE_SE_boot",
+    "wMAE_test":"wMAE_SE_boot",
+    "nRMSE":    "nRMSE_SE_boot",
+    "Pearson":  "pearson_se",
+    "Spearman": None,
+    "R2":       None,
+}
+
+def rma_mv_exact(df, metric, se_col):
+    df = df.dropna(subset=[metric, se_col]).copy()
+    yi = df[metric].values
+    vi = df[se_col].values ** 2
     wi = 1 / vi
     mu_fixed = np.sum(wi * yi) / np.sum(wi)
     Q = np.sum(wi * (yi - mu_fixed) ** 2)
@@ -99,15 +113,15 @@ def rma_mv_exact(df):
     se = np.sqrt(1 / np.sum(wi_star))
     return pd.DataFrame({
         "model": ["Pooled"],
-        "wMAE": [mu],
+        "estimate": [mu],
         "ci.lb": [mu - 1.96 * se],
         "ci.ub": [mu + 1.96 * se]
     })
 
-def plot_model_performance(df, est_df):
+def plot_model_performance(df, est_df, metric):
     df = df.copy()
     est_df = est_df.copy()
-    model_order = df.groupby("model")["wMAE_test"].mean().sort_values(ascending=True).index.tolist()
+    model_order = df.groupby("model")[metric].mean().sort_values(ascending=True).index.tolist()
     model_order = [m for m in model_order if m != "Pooled"][::-1] + ["Pooled"]
     df["model"] = pd.Categorical(df["model"], categories=model_order, ordered=True)
     est_df["model"] = pd.Categorical(est_df["model"], categories=model_order, ordered=True)
@@ -128,12 +142,15 @@ def plot_model_performance(df, est_df):
             x=[None], y=[None],
             mode="markers",
             name=str(cohort),
+            legendgroup="cohort",
+            showlegend=True,
             marker=dict(size=8, symbol=cohort_symbol[cohort], color="black")
         ))
         fig.add_trace(go.Scatter(
-            x=sub["wMAE_test"],
+            x=sub[metric],
             y=sub["y_jitter"],
             mode="markers",
+            legendgroup="cohort",
             showlegend=False,
             marker=dict(
                 size=8,
@@ -143,7 +160,8 @@ def plot_model_performance(df, est_df):
                 cmin=age_min,
                 cmax=age_max,
                 showscale=False
-            )
+            ),
+            text=sub["cohort"]
         ))
     for _, row in est_df.iterrows():
         y = y_map[row["model"]]
@@ -155,7 +173,7 @@ def plot_model_performance(df, est_df):
             showlegend=False
         ))
         fig.add_trace(go.Scatter(
-            x=[row["wMAE"]],
+            x=[row["estimate"]],
             y=[y],
             mode="markers",
             marker=dict(size=11, color="black", symbol="diamond"),
@@ -164,8 +182,8 @@ def plot_model_performance(df, est_df):
     pooled_y = y_map.get("Pooled", 0)
     fig.add_shape(
         type="line",
-        x0=df["wMAE_test"].min(),
-        x1=df["wMAE_test"].max(),
+        x0=df[metric].min(),
+        x1=df[metric].max(),
         y0=pooled_y + 0.5,
         y1=pooled_y + 0.5,
         line=dict(color="grey", width=1)
@@ -173,19 +191,23 @@ def plot_model_performance(df, est_df):
     fig.update_layout(
         height=850,
         title="Epigenetic Clock Performance",
-        xaxis_title="Weighted MAE",
+        xaxis_title=metric,
         yaxis=dict(
             tickmode="array",
             tickvals=list(y_map.values()),
             ticktext=list(y_map.keys())
         ),
         legend=dict(
+            title="Cohort",
             x=1.02,
             y=1.0,
             xanchor="left",
-            yanchor="top"
+            yanchor="top",
+            font=dict(size=10),
+            bgcolor="rgba(255,255,255,0.4)"
         )
     )
+    fig.update_xaxes(autorange=True)
     fig.add_trace(go.Scatter(
         x=[None],
         y=[None],
@@ -197,13 +219,24 @@ def plot_model_performance(df, est_df):
             colorscale=colorscale,
             colorbar=dict(title="Mean Age", x=1.02, y=0.25, len=0.45)
         ),
-        showlegend=False
+        showlegend=False,
+        hoverinfo="none"
     ))
     return fig
 
-overall_est = rma_mv_exact(filtered)
+se_col = se_map.get(metric)
 
-fig_adv = plot_model_performance(filtered, overall_est)
+if se_col is None or se_col not in filtered.columns:
+    overall_est = pd.DataFrame({
+        "model": ["Pooled"],
+        "estimate": [filtered[metric].mean()],
+        "ci.lb": [np.nan],
+        "ci.ub": [np.nan]
+    })
+else:
+    overall_est = rma_mv_exact(filtered, metric, se_col)
+
+fig_adv = plot_model_performance(filtered, overall_est, metric)
 
 st.plotly_chart(fig_adv, use_container_width=True)
 
