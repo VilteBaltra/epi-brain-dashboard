@@ -97,3 +97,9 @@ A `CITATION.cff` file is included for one-click citation export via GitHub.
 ## License
 
 MIT © 2026 The MIND Consortium
+
+---
+
+## Acknowledgements
+
+Dashboard developed with assistance from [Claude](https://www.anthropic.com/claude) (Anthropic).
