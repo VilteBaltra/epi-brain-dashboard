@@ -777,6 +777,7 @@ def violin_plot_plotly(
             hoverinfo="skip",
             points=False,
             width=0.65,
+            spanmode="hard",
         ))
 
     # ── Meta dots per model with CI error bars ────────────────────────────────
