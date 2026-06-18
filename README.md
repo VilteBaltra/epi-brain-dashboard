@@ -1,4 +1,4 @@
-# MIND Consortium Ageing Dashboard
+# Epigenetic & Brain Age Dashboard — MIND Consortium
 
 Interactive dashboard accompanying the paper:
 
