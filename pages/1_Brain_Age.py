@@ -594,7 +594,7 @@ def _compute_brain_pub_data(raw_df: pd.DataFrame):
     # pearson_meta is computed below and includes a Pooled row
     # We compute a per-model Pearson meta here first for R2 derivation
     _pm_for_r2 = _compute_meta_z(d, group_cols=["model"])
-    _dp = d.dropna(subset=["pearson_z", "pearson_var"])
+    _dp = d[~d["model"].isin(["DunedinPACNI"])].dropna(subset=["pearson_z", "pearson_var"])
     _dp = _dp[_dp["pearson_var"] > 0].copy()
     _dp["_grp"] = "Pooled"
     _pooled_r2_r = _compute_meta_z(_dp, group_cols=["_grp"]).rename(columns={"_grp": "model"})
@@ -609,7 +609,7 @@ def _compute_brain_pub_data(raw_df: pd.DataFrame):
 
     # 3B — Pearson meta on full dataset (per-model) + overall Pooled row
     pearson_meta = _compute_meta_z(d, group_cols=["model"])
-    _d_pool = d.dropna(subset=["pearson_z", "pearson_var"])
+    _d_pool = d[~d["model"].isin(["DunedinPACNI"])].dropna(subset=["pearson_z", "pearson_var"])
     _d_pool = _d_pool[_d_pool["pearson_var"] > 0].copy()
     _d_pool["_grp"] = "Pooled"
     _pooled_p = _compute_meta_z(_d_pool, group_cols=["_grp"]).rename(columns={"_grp": "model"})
