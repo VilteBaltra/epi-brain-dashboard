@@ -283,8 +283,9 @@ def _compute_epi_pub_data(raw_df: pd.DataFrame):
     epi_pearson.loc[_mask, "Pearson"]   = -epi_pearson.loc[_mask, "Pearson"]
     epi_pearson.loc[_mask, "pearson_z"] = -epi_pearson.loc[_mask, "pearson_z"]
     pearson_meta = _compute_meta_z(epi_pearson, group_cols=["model"])
-    # Add overall pooled Pearson row
-    _ep = epi_pearson.dropna(subset=["pearson_z", "pearson_var"])
+    # Add overall pooled Pearson row — exclude DunedinPACE/DNAmTL (not chronological-age clocks)
+    _excluded = ["DunedinPACE", "DNAmTL"]
+    _ep = epi_pearson[~epi_pearson["model"].isin(_excluded)].dropna(subset=["pearson_z", "pearson_var"])
     _ep = _ep[_ep["pearson_var"] > 0].copy()
     _ep["_grp"] = "Pooled"
     _pooled_pr = _compute_meta_z(_ep, group_cols=["_grp"]).rename(columns={"_grp": "model"})
