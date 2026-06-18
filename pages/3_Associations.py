@@ -417,6 +417,7 @@ tab_4a, tab_4b, tab_4c = st.tabs([
 
 # ── Fig 4A ────────────────────────────────────────────────────────────────────
 with tab_4a:
+    st.subheader("Brain-PAR – Epi-PAR associations across model combinations")
     _4a_col1, _4a_col2 = st.columns([3, 1])
     _4a_col1.caption(
         "Each panel shows one brain model. Coloured dots = raw cohort-level associations "
@@ -635,6 +636,7 @@ with tab_4a:
 
 # ── Fig 4B ────────────────────────────────────────────────────────────────────
 with tab_4b:
+    st.subheader("Chord diagram of Brain-PAR – Epi-PAR association strength across model combinations")
     st.caption(
         "Chord diagram of Brain-PAR – Epi-PAR pooled associations. "
         "Upper arc = brain models (coloured segments); lower arc = epi clocks. "
@@ -685,6 +687,7 @@ with tab_4b:
 
 # ── Fig 4C ────────────────────────────────────────────────────────────────────
 with tab_4c:
+    st.subheader("Brain-PAR – Epi-PAR associations by developmental age group")
     st.caption(
         "Violin + boxplot of association betas by brain developmental age group. "
         "Coloured dots = pooled meta-analysis estimates per model combination "
@@ -790,17 +793,49 @@ with tab_4c:
             customdata=[b for b, _, _, _ in rows],
         ))
 
-    # ── k= annotations ────────────────────────────────────────────────────
-    cnt_map = dict(zip(counts["age_bin"], counts["label"]))
+    # ── k= labels — Scatter text traces so hover works ────────────────────
+    cnt_map = dict(zip(counts["age_bin"], counts["k"]))
+
+    # Build per-bin hover text — one line per unique cohort-timepoint combination
+    # Array type is embedded in the timepoint string (e.g. "9y_450k", "9y_EPIC")
+    def _parse_array(tp):
+        tp_up = str(tp).upper()
+        for arr in ["EPIC", "450K", "850K", "27K"]:
+            if arr in tp_up:
+                return arr
+        return None
+
+    _bin_hover = {}
+    for b in bin_x.keys():
+        _sub = _raw_4c[_raw_4c["age_bin"].astype(str) == str(b)].dropna(subset=["cohort", "timepoint", "mean_age"])
+        if _sub.empty:
+            continue
+        _uniq = _sub.groupby(["cohort", "timepoint"])["mean_age"].mean().reset_index().sort_values("mean_age")
+        lines = []
+        for _, row in _uniq.iterrows():
+            age_str = f"{row['mean_age']:.1f} y"
+            arr = _parse_array(row["timepoint"])
+            arr_str = f", {arr}" if arr else ""
+            lines.append(f"{row['cohort']}{arr_str} ({age_str})")
+        _bin_hover[str(b)] = "<br>".join(lines)
+
     y_floor = _raw_4c["RLM_Estimate_scaled"].min(skipna=True) if not _raw_4c.empty else -0.3
+    k_y = y_floor - 0.05
     for b, xi in bin_x.items():
-        lbl = cnt_map.get(b)
-        if lbl:
-            fig_4c.add_annotation(
-                x=xi, y=y_floor - 0.05,
-                text=lbl, showarrow=False,
-                font=dict(size=10), yanchor="top",
-            )
+        k = cnt_map.get(b)
+        if k is not None:
+            detail = _bin_hover.get(str(b), "")
+            fig_4c.add_trace(go.Scatter(
+                x=[xi], y=[k_y],
+                mode="text",
+                text=[f"k={k}"],
+                textfont=dict(size=10, color="black"),
+                textposition="middle center",
+                hovertemplate=(
+                    f"<b>k={k} cohort-timepoints</b><br>{detail}<extra></extra>"
+                ),
+                showlegend=False,
+            ))
 
     fig_4c.update_xaxes(
         tickmode="array",
@@ -809,12 +844,11 @@ with tab_4c:
         tickangle=30,
         title_text="Developmental age group",
     )
-    fig_4c.update_yaxes(title_text="Robust standardised β", range=[-0.55, 0.55])
+    fig_4c.update_yaxes(title_text="Robust standardised β", range=[k_y - 0.08, 0.55])
     fig_4c.update_layout(
-        title="Brain–Epi PAR associations across developmental age groups",
         height=600,
         showlegend=False,
-        margin=dict(l=60, r=40, t=60, b=110),
+        margin=dict(l=60, r=40, t=20, b=110),
         boxmode="overlay",
         violinmode="overlay",
     )

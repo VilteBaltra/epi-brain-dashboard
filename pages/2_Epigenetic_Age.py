@@ -255,7 +255,7 @@ else:
 
 st.divider()
 st.header("Publication Figures")
-st.caption("Replicating paper figures — responds to sidebar filters above.")
+st.caption("Replicating paper figures — responds to sidebar filters on the left.")
 
 
 @st.cache_data(show_spinner=False)

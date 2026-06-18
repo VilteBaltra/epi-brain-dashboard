@@ -260,9 +260,10 @@ def _gen_order_ascending(models_in_gen: list, meta_df: pd.DataFrame) -> list:
     return sub.sort_values("pooled_val", ascending=True)["model"].tolist()
 
 def _k_counts(df: pd.DataFrame, bin_col: str = "age_bin") -> pd.DataFrame:
-    """Count unique cohort-timepoint combinations per age bin."""
+    """Count unique cohort-timepoint-array combinations per age bin."""
+    arr = df["cpg_array"].astype(str) if "cpg_array" in df.columns else ""
     counts = (
-        df.assign(_ct=df["cohort"].astype(str) + "|" + df["timepoint"].astype(str))
+        df.assign(_ct=df["cohort"].astype(str) + "|" + df["timepoint"].astype(str) + "|" + arr)
         .groupby(bin_col, observed=True)["_ct"]
         .nunique()
         .reset_index(name="k")
@@ -774,8 +775,11 @@ def violin_plot_plotly(
             name=str(b), showlegend=False,
             fillcolor="#d9d9d9", line_color="#bbbbbb",
             opacity=1.0,
-            box_visible=True,
-            box_fillcolor="rgba(255,255,255,0.8)",
+            box=dict(
+                visible=True,
+                fillcolor="rgba(255,255,255,0.8)",
+                line=dict(color="black", width=1.5),
+            ),
             meanline_visible=False,
             hoverinfo="skip",
             points=False,
