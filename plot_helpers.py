@@ -821,10 +821,13 @@ def violin_plot_plotly(
         ))
 
     # ── k-count annotations in data coords just below y=0 ────────────────────
-    all_vals = df[y_col].dropna().values
-    y_span = float(np.nanmax(all_vals) - np.nanmin(all_vals)) if len(all_vals) else 1.0
-    k_y    = -y_span * 0.12   # scales with data: ~-4 for wMAE, ~-0.06 for R2
-    y_min  = -y_span * 0.20
+    all_vals   = df[y_col].dropna().values
+    y_data_min = float(np.nanmin(all_vals)) if len(all_vals) else 0.0
+    y_data_max = float(np.nanmax(all_vals)) if len(all_vals) else 1.0
+    y_span     = (y_data_max - y_data_min) if y_data_max > y_data_min else 1.0
+    # k= sits just below the lowest violin shading, scaled by span
+    k_y  = y_data_min - y_span * 0.06
+    y_min = y_data_min - y_span * 0.15
 
     cnt_map = {}
     if counts is not None:
