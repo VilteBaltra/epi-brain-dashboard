@@ -21,6 +21,12 @@ from plot_helpers import (
 
 st.set_page_config(page_title="Brain Age Model Performance", layout="wide")
 
+st.markdown("""
+<style>
+[data-testid="stMetricValue"] { font-size: 1.6rem; }
+</style>
+""", unsafe_allow_html=True)
+
 # -------------------------
 # LOAD DATA
 # -------------------------

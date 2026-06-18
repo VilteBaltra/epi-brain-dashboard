@@ -8,6 +8,7 @@ st.set_page_config(page_title="MIND Consortium Ageing Dashboard", layout="wide")
 st.markdown("""
 <style>
 [data-testid="stMetricValue"] { font-size: 1.6rem; }
+[data-testid="stTable"] td, [data-testid="stTable"] th { font-size: 0.82rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -51,7 +52,7 @@ cohorts = pd.DataFrame([
     ["FFCWS",             "US",              "Population-based birth cohort",                       2, "114–1122",  "9–15"],
     ["TAG",               "US",              "Community cohort",                                    6, "54–151",    "11–19"],
 ], columns=[
-    "Cohort abbreviation", "Country", "Study design",
+    "Cohort", "Country", "Study design",
     "Number of time points", "Sample size range", "Mean age range (years)"
 ])
 
@@ -71,9 +72,9 @@ country_centroids = {
     "Australia":       (-25.27, 133.78),
 }
 
-country_cohorts = cohorts.groupby("Country")["Cohort abbreviation"].apply(
+country_cohorts = cohorts.groupby("Country")["Cohort"].apply(
     lambda x: ", ".join(x)
-).reset_index().rename(columns={"Cohort abbreviation": "Cohort"})
+).reset_index().rename(columns={"Cohort": "Cohort"})
 country_cohorts["n"] = cohorts.groupby("Country").size().values
 country_cohorts["lat"] = country_cohorts["Country"].map(lambda c: country_centroids[c][0])
 country_cohorts["lon"] = country_cohorts["Country"].map(lambda c: country_centroids[c][1])
@@ -101,7 +102,7 @@ st.divider()
 # ── COHORT DESCRIPTIVES ───────────────────────────────────────────────────────
 st.subheader("Cohort Descriptives")
 
-st.table(cohorts.set_index("Cohort abbreviation"))
+st.table(cohorts.set_index("Cohort"))
 
 st.divider()
 

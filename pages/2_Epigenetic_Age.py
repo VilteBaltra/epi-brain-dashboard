@@ -18,6 +18,12 @@ from plot_helpers import (
 
 st.set_page_config(page_title="Epigenetic Clock Performance", layout="wide")
 
+st.markdown("""
+<style>
+[data-testid="stMetricValue"] { font-size: 1.6rem; }
+</style>
+""", unsafe_allow_html=True)
+
 @st.cache_data
 def load_data():
     return pd.read_csv("data/perf_epi.csv")

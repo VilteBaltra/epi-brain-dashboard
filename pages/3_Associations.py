@@ -18,6 +18,11 @@ from plot_helpers import (
 
 st.set_page_config(page_title="Brain–Epi Associations", layout="wide")
 
+st.markdown("""
+<style>
+[data-testid="stMetricValue"] { font-size: 1.6rem; }
+</style>
+""", unsafe_allow_html=True)
 
 # ── Load & preprocess ──────────────────────────────────────────────────────────
 @st.cache_data
@@ -412,11 +417,40 @@ tab_4a, tab_4b, tab_4c = st.tabs([
 
 # ── Fig 4A ────────────────────────────────────────────────────────────────────
 with tab_4a:
-    st.caption(
+    _4a_col1, _4a_col2 = st.columns([3, 1])
+    _4a_col1.caption(
         "Each panel shows one brain model. Coloured dots = raw cohort-level associations "
         "(hover for details); black diamonds = pooled meta-analysis estimates per epi clock. "
         "Final panel pools across all brain models."
     )
+    _sig_only      = _4a_col2.checkbox("Sig. epi clocks only (pooled across brain models)", value=False)
+    _sig_brain_only = _4a_col2.checkbox("Sig. brain models only (pooled across epi clocks)", value=False)
+
+    if _sig_only:
+        # Significant = CI doesn't cross zero in the "Epi clocks (pooled)" panel
+        # (brain_margin rows: pooled across all brain models)
+        _sig_epi = set(
+            _disp_est[
+                (_disp_est["brain_model_facet"] == "Epi clocks (pooled)") &
+                (_disp_est["epi_model"] != "Pooled") &
+                ((_disp_est["ci_lb"] > 0) | (_disp_est["ci_ub"] < 0))
+            ]["epi_model"].dropna()
+        )
+        _disp_y   = ["Pooled"] + [m for m in _disp_y if m in _sig_epi]
+        _disp_est = _disp_est[_disp_est["epi_model"].isin(set(_disp_y))]
+        _disp_raw = _disp_raw[_disp_raw["epi_model"].isin(set(_disp_y))]
+
+    if _sig_brain_only:
+        # Significant = CI doesn't cross zero in the brain_margin (pooled across all epi clocks)
+        _sig_brain = set(
+            _disp_est[
+                (_disp_est["epi_model"] == "Pooled") &
+                (_disp_est["brain_model_facet"] != "Epi clocks (pooled)") &
+                ((_disp_est["ci_lb"] > 0) | (_disp_est["ci_ub"] < 0))
+            ]["brain_model_facet"].dropna()
+        )
+        # Always keep the "Epi clocks (pooled)" summary panel
+        _disp_panels = [p for p in _disp_panels if p in _sig_brain or p == "Epi clocks (pooled)"]
 
     n_panels = len(_disp_panels)
     n_cols   = min(5, n_panels)
@@ -435,8 +469,24 @@ with tab_4a:
     rng           = np.random.default_rng(42)
 
     # Compute a sensible x-limit from 99th percentile of absolute betas
+    # Also incorporate overall-pooled CI bounds (epi_model == "Pooled") so small-but-significant
+    # CIs don't visually overlap zero.
     _all_abs = _disp_raw["RLM_Estimate_scaled"].dropna().abs()
-    _x_lim   = float(np.clip(_all_abs.quantile(0.99) * 1.25, 0.25, 0.6)) if not _all_abs.empty else 0.3
+    _raw_lim = float(_all_abs.quantile(0.99) * 1.25) if not _all_abs.empty else 0.3
+    _overall_pooled = _disp_est[
+        (_disp_est["epi_model"] == "Pooled") &
+        (_disp_est["brain_model_facet"].isin(_disp_panels))
+    ]
+    _pooled_ci_abs = pd.concat([
+        _overall_pooled["ci_lb"].dropna().abs(),
+        _overall_pooled["ci_ub"].dropna().abs(),
+    ])
+    if not _pooled_ci_abs.empty:
+        # Ensure max overall-pooled CI bound sits at ≥30% of half-axis
+        _pooled_lim = float(_pooled_ci_abs.max()) * 3.5
+        _x_lim = float(np.clip(min(_raw_lim, _pooled_lim), 0.05, 0.6))
+    else:
+        _x_lim = float(np.clip(_raw_lim, 0.05, 0.6))
 
     for idx, panel in enumerate(_disp_panels):
         r = idx // n_cols + 1
@@ -506,13 +556,22 @@ with tab_4a:
                 continue
             is_pooled = (est["epi_model"] == "Pooled")
 
+            # Colour by significance: purple = significant (CI doesn't cross zero), black = n.s.
+            _lb, _ub = est["ci_lb"], est["ci_ub"]
+            if not (pd.isna(_lb) or pd.isna(_ub)):
+                _is_sig = (_lb > 0) or (_ub < 0)
+                _est_color = "#7B2FBE" if _is_sig else "black"
+            else:
+                _is_sig = False
+                _est_color = "black"
+
             # CI line
-            if not (pd.isna(est["ci_lb"]) or pd.isna(est["ci_ub"])):
+            if not (pd.isna(_lb) or pd.isna(_ub)):
                 fig_4a.add_trace(go.Scatter(
-                    x=[est["ci_lb"], est["ci_ub"]],
+                    x=[_lb, _ub],
                     y=[yi, yi],
                     mode="lines",
-                    line=dict(color="black", width=2.5 if is_pooled else 1.0),
+                    line=dict(color=_est_color, width=2.5 if is_pooled else 1.0),
                     showlegend=False,
                     hoverinfo="skip",
                 ), row=r, col=c)
@@ -523,9 +582,9 @@ with tab_4a:
                 y=[yi],
                 mode="markers",
                 marker=dict(
-                    color="black",
+                    color=_est_color,
                     symbol="diamond" if is_pooled else "circle",
-                    size=10 if is_pooled else 6,
+                    size=7 if is_pooled else 6,
                 ),
                 name="Overall pooled",
                 legendgroup="meta",
@@ -538,15 +597,18 @@ with tab_4a:
                 ),
             ), row=r, col=c)
 
-    # "Overall pooled" legend entry — added last so it appears at the bottom
-    fig_4a.add_trace(go.Scatter(
-        x=[None], y=[None],
-        mode="markers",
-        marker=dict(color="black", symbol="diamond", size=10),
-        name="Overall pooled",
-        legendgroup="meta",
-        showlegend=True,
-    ))
+    # Pooled estimate legend entries — two states: significant (purple) and n.s. (black)
+    # The <br> in the group title adds a small gap below the heading without a full blank row.
+    for i, (_leg_color, _leg_name) in enumerate([("#7B2FBE", "Pooled (significant)"), ("black", "Pooled (n.s.)")]):
+        fig_4a.add_trace(go.Scatter(
+            x=[None], y=[None],
+            mode="markers",
+            marker=dict(color=_leg_color, symbol="diamond", size=5),
+            name=_leg_name,
+            legendgroup="meta",
+            legendgrouptitle_text="Meta-analysis" if i == 0 else None,
+            showlegend=True,
+        ))
 
     # y-axis tick labels (shared) — only show on leftmost column
     fig_4a.update_yaxes(
