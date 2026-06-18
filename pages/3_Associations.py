@@ -229,8 +229,8 @@ else:
 def _make_chord_fig(pm, brain_models, epi_models):
     """
     Chord diagram matching R layout:
-      Brain models: upper-right → top → upper-left arc  (25° → 210° CCW)
-      Epi clocks:   lower-left → bottom → lower-right arc (215° → 380° CCW, wraps past 0°)
+      Brain models: exact top semicircle    (5° → 175° CCW)
+      Epi clocks:   exact bottom semicircle (185° → 355° CCW)
     Bezier curves connect pairs; colour = sign of pooled β, width = |β|.
     Labels are radial (pointing outward from centre) with readable orientation.
     """
@@ -262,10 +262,10 @@ def _make_chord_fig(pm, brain_models, epi_models):
     LABEL_R = OUTER_R + 0.26
     SEG_GAP = np.radians(0.8)
 
-    # Brain: 25° → 210° counterclockwise through the top
-    # Epi:  215° → 380° counterclockwise through the bottom (380° = 20° past 0°)
-    B_START, B_END = np.radians(25),  np.radians(210)
-    E_START, E_END = np.radians(215), np.radians(380)
+    # Brain: 5° → 175° counterclockwise through the top (exact top semicircle, ±5° gap)
+    # Epi:  185° → 355° counterclockwise through the bottom (exact bottom semicircle, ±5° gap)
+    B_START, B_END = np.radians(5),   np.radians(175)
+    E_START, E_END = np.radians(185), np.radians(355)
 
     def assign_arcs(models, arc_s, arc_e):
         n = len(models)
