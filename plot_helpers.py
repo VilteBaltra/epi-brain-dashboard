@@ -866,7 +866,7 @@ def violin_plot_plotly(
     # ── Layout ────────────────────────────────────────────────────────────────
     fig.update_layout(
         height=540,
-        title=dict(text=title, font=dict(size=font_size + 4), x=0.5),
+        title=dict(text=title, font=dict(size=font_size + 4), x=0.5, xanchor="center"),
         xaxis=dict(
             tickmode="array",
             tickvals=list(range(n_bins)),
