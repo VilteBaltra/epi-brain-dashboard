@@ -14,6 +14,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import seaborn as sns
+import plotly.graph_objects as go
 from statsmodels.regression.mixed_linear_model import MixedLM
 
 warnings.filterwarnings("ignore")
@@ -167,6 +168,28 @@ def _compute_bin_meta(df: pd.DataFrame, yi_col: str, vi_col: str) -> pd.DataFram
         rows.append({
             "age_bin": age_bin, "model": model,
             "pooled_val": mu, "ci_lb_val": lb, "ci_ub_val": ub,
+            "k": len(dat), "meta_model": meth,
+        })
+    out = pd.DataFrame(rows)
+    if not out.empty and hasattr(df["age_bin"], "cat"):
+        out["age_bin"] = pd.Categorical(
+            out["age_bin"], categories=df["age_bin"].cat.categories, ordered=True
+        )
+    return out
+
+
+def _compute_bin_meta_z(df: pd.DataFrame) -> pd.DataFrame:
+    """Per (age_bin, model) pooled Pearson r via Fisher-z meta, back-transformed via tanh."""
+    valid = df.dropna(subset=["pearson_z", "pearson_var"])
+    valid = valid[valid["pearson_var"] > 0]
+    rows = []
+    for (age_bin, model), dat in valid.groupby(["age_bin", "model"], observed=True):
+        mu, lb, ub, meth = _pool_group(dat, yi_col="pearson_z", vi_col="pearson_var")
+        rows.append({
+            "age_bin": age_bin, "model": model,
+            "pooled_val":  np.tanh(mu),
+            "ci_lb_val":   np.tanh(lb) if not np.isnan(lb) else np.nan,
+            "ci_ub_val":   np.tanh(ub) if not np.isnan(ub) else np.nan,
             "k": len(dat), "meta_model": meth,
         })
     out = pd.DataFrame(rows)
@@ -468,6 +491,399 @@ def violin_plot(
               fontsize=9, title_fontsize=11, frameon=False)
 
     plt.tight_layout()
+    return fig
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Interactive Plotly versions of forest_plot and violin_plot
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def forest_plot_plotly(
+    raw_df: pd.DataFrame,
+    meta_df: pd.DataFrame,
+    model_order: list,
+    x_col: str,
+    title: str = "",
+    x_label: str = "",
+    color_col: str = "cohort",
+    color_palette: Optional[dict] = None,
+    meta_label: str = "Meta-analysis",
+    x_refline: Optional[float] = None,
+    dividers: Optional[list] = None,
+    x_log: bool = False,
+    x_limits: Optional[tuple] = None,
+    x_breaks: Optional[list] = None,
+    x_break_labels: Optional[list] = None,
+    jitter_height: float = 0.12,
+    gen_labels: Optional[list] = None,
+    font_size: int = 11,
+    marker_size: int = 5,
+    row_height: int = 45,
+) -> go.Figure:
+    """
+    Interactive Plotly caterpillar / forest plot.
+    Hover on raw dots → cohort name + value.
+    Hover on meta diamonds → model + pooled estimate + 95 % CI.
+    """
+    from plotly.subplots import make_subplots
+
+    rng  = np.random.default_rng(42)
+    y_map = {m: i for i, m in enumerate(model_order)}
+    pal  = color_palette or {}
+    n    = len(model_order)
+    _fig_h = max(420, 80 + row_height * n)
+
+    # ── Figure: two-column subplot when gen_labels present ────────────────────
+    # Left col (7 %): gen-label boxes only.  Right col (93 %): data.
+    # With horizontal_spacing=0 the cols are adjacent; yaxis2 tick labels
+    # (model names) appear between the two columns automatically.
+    _use_sub = bool(gen_labels)
+    if _use_sub:
+        fig = make_subplots(
+            rows=1, cols=2,
+            column_widths=[0.06, 0.94],
+            shared_yaxes=False,
+            horizontal_spacing=0.16,
+        )
+        _dc = dict(row=1, col=2)   # route data traces to right column
+    else:
+        fig = go.Figure()
+        _dc = {}
+
+    # ── Raw cohort dots (one trace per cohort so legend colours work) ─────────
+    present_cohorts = sorted(raw_df[color_col].dropna().unique())
+    for ci, cohort in enumerate(present_cohorts):
+        grp = raw_df[raw_df[color_col] == cohort]
+        xs, ys, texts = [], [], []
+        for _, row in grp.iterrows():
+            yi = y_map.get(row["model"])
+            if yi is None or pd.isna(row[x_col]):
+                continue
+            xs.append(row[x_col])
+            ys.append(yi + rng.uniform(-jitter_height, jitter_height))
+            texts.append(f"<b>{cohort}</b><br>{x_label or x_col}: {row[x_col]:.3f}")
+        if not xs:
+            continue
+        fig.add_trace(go.Scatter(
+            x=xs, y=ys, mode="markers",
+            marker=dict(color=pal.get(cohort, "#aaaaaa"), size=marker_size, opacity=0.5),
+            name=str(cohort),
+            legendgroup="cohort",
+            legendgrouptitle_text="Source" if ci == 0 else None,
+            text=texts,
+            hovertemplate="%{text}<extra></extra>",
+            showlegend=True,
+        ), **_dc)
+
+    # ── Meta CI lines + diamond markers ──────────────────────────────────────
+    for _, row in meta_df.iterrows():
+        yi = y_map.get(row["model"])
+        if yi is None:
+            continue
+        pooled = row["pooled_val"]
+        lb = row.get("ci_lb", np.nan)
+        ub = row.get("ci_ub", np.nan)
+        has_ci = not (pd.isna(lb) or pd.isna(ub))
+        ci_str = f"{lb:.3f} – {ub:.3f}" if has_ci else "n/a"
+        is_pooled = row["model"] == "Pooled"
+        if has_ci:
+            fig.add_trace(go.Scatter(
+                x=[lb, ub], y=[yi, yi], mode="lines",
+                line=dict(color="black", width=1.5),
+                showlegend=False, hoverinfo="skip",
+            ), **_dc)
+        fig.add_trace(go.Scatter(
+            x=[pooled], y=[yi], mode="markers",
+            marker=dict(symbol="diamond", size=marker_size + 6 if is_pooled else marker_size + 4, color="black"),
+            name=meta_label if is_pooled else "",
+            showlegend=is_pooled,
+            legendgroup="meta",
+            legendgrouptitle_text="Pooled" if is_pooled else None,
+            hovertemplate=(
+                f"<b>{row['model']}</b><br>"
+                f"Pooled {x_label or x_col}: {pooled:.3f}<br>"
+                f"95% CI: [{ci_str}]<extra></extra>"
+            ),
+        ), **_dc)
+
+    # ── Vertical reference line ───────────────────────────────────────────────
+    if x_refline is not None:
+        _xref = "x2" if _use_sub else "x"
+        fig.add_shape(type="line",
+                      x0=x_refline, x1=x_refline, xref=_xref,
+                      y0=0, y1=1, yref=("y2 domain" if _use_sub else "y domain"),
+                      line=dict(color="#d9d9d9", width=0.8))
+
+    # ── Horizontal dividers (between row groups) ──────────────────────────────
+    if dividers:
+        _xref  = "x2 domain" if _use_sub else "x domain"
+        _yref  = "y2"        if _use_sub else "y"
+        for y_pos, lstyle in dividers:
+            fig.add_shape(type="line",
+                          x0=0, x1=1, xref=_xref,
+                          y0=y_pos - 0.5, y1=y_pos - 0.5, yref=_yref,
+                          line=dict(color="#666666", width=0.6,
+                                    dash="solid" if lstyle == "solid" else "dash"))
+
+    # ── Generation labels in left subplot ─────────────────────────────────────
+    raw_boxes: list = []
+    if _use_sub:
+        _plot_h      = _fig_h - 60 - 50
+        _PX_PER_UNIT = max(30, _plot_h / max(n + 0.5, 1))
+        _PX_PER_CHAR = 7
+        _BOX_GAP     = 0.05
+
+        for info in gen_labels:
+            present_m = [m for m in info["models"] if m in y_map]
+            if not present_m:
+                continue
+            _y_bottom = min(y_map[m] for m in present_m)
+            _y_top    = max(y_map[m] for m in present_m)
+            _needed   = len(info["label"]) * _PX_PER_CHAR / _PX_PER_UNIT
+            _half     = info.get("pad", 0.30)
+            raw_boxes.append({
+                "info": info, "present_m": present_m,
+                "y_lo": _y_bottom - _half,
+                "y_hi": _y_top    + _half,
+                "height": (_y_top - _y_bottom) + 2 * _half,
+            })
+
+        raw_boxes.sort(key=lambda b: b["y_lo"])
+        for i in range(len(raw_boxes) - 1):
+            j = i + 1
+            if raw_boxes[i]["y_hi"] > raw_boxes[j]["y_lo"] - _BOX_GAP:
+                raw_boxes[i]["y_hi"] = raw_boxes[j]["y_lo"] - _BOX_GAP
+                raw_boxes[i]["y_lo"] = raw_boxes[i]["y_hi"] - raw_boxes[i]["height"]
+
+        for bx in raw_boxes:
+            info = bx["info"]
+            y_lo = bx["y_lo"]
+            y_hi = bx["y_hi"]
+            fig.add_trace(go.Scatter(
+                x=[0.1, 0.1, 0.9, 0.9, 0.1],
+                y=[y_lo, y_hi, y_hi, y_lo, y_lo],
+                mode="lines", fill="toself", fillcolor="white",
+                line=dict(color=info["color"], width=2),
+                showlegend=False, hoverinfo="skip",
+            ), row=1, col=1)
+            # Annotation xref="x" → col-1 x-axis, yref="y" → col-1 y-axis
+            fig.add_annotation(
+                xref="x", yref="y",
+                x=0.5, y=(y_lo + y_hi) / 2,
+                text=f"<b>{info['label']}</b>",
+                showarrow=False, textangle=-90,
+                font=dict(size=max(8, font_size - 2), color="black"),
+                xanchor="center", yanchor="middle",
+            )
+
+    # ── Y-axis range (must encompass all boxes) ───────────────────────────────
+    _y_lo = min((b["y_lo"] for b in raw_boxes), default=-0.5)
+    _y_lo = min(_y_lo, -0.5)
+    _y_hi = max((b["y_hi"] for b in raw_boxes), default=n - 0.5)
+    _y_hi = max(_y_hi, n - 0.5)
+
+    # ── Axis configuration ────────────────────────────────────────────────────
+    _xd_vals = raw_df[x_col].dropna()
+    _xd_min  = float(_xd_vals.min()) if len(_xd_vals) else 0.0
+    _xd_max  = float(_xd_vals.max()) if len(_xd_vals) else 1.0
+    _xd_span = max(_xd_max - _xd_min, 1e-6)
+
+    _xdata_kw: dict = dict(
+        title_text=x_label, gridcolor="#ebebeb",
+        zeroline=False, showline=True, linecolor="#cccccc",
+        title_font=dict(size=font_size), tickfont=dict(size=font_size),
+    )
+    if x_log:
+        _xdata_kw["type"] = "log"
+    if x_limits:
+        _xdata_kw["range"] = list(x_limits)
+    if x_breaks is not None:
+        _xdata_kw["tickvals"] = x_breaks
+        _xdata_kw["ticktext"] = x_break_labels or [str(b) for b in x_breaks]
+
+    _ydata_kw: dict = dict(
+        tickmode="array", tickvals=list(range(n)), ticktext=model_order,
+        showgrid=False, showline=False, range=[_y_lo, _y_hi],
+        tickfont=dict(size=font_size),
+    )
+
+    if _use_sub:
+        # Col-1: gen-label panel — no axes visible
+        fig.update_xaxes(showticklabels=False, showgrid=False,
+                         zeroline=False, showline=False,
+                         range=[0, 1], row=1, col=1)
+        fig.update_yaxes(showticklabels=False, showgrid=False,
+                         zeroline=False, showline=False,
+                         range=[_y_lo, _y_hi], row=1, col=1)
+        # Col-2: data panel
+        fig.update_xaxes(**_xdata_kw, row=1, col=2)
+        fig.update_yaxes(**_ydata_kw, row=1, col=2)
+    else:
+        fig.update_layout(xaxis=_xdata_kw, yaxis=_ydata_kw)
+    _title_x = 0.5
+
+    fig.update_layout(
+        height=_fig_h,
+        title=dict(text=title, font=dict(size=font_size + 4),
+                   x=_title_x, xref="paper", xanchor="center"),
+        plot_bgcolor="white", paper_bgcolor="white",
+        legend=dict(x=1.02, y=1, xanchor="left",
+                    font=dict(size=max(8, font_size - 2)), tracegroupgap=6),
+        margin=dict(l=10, r=180, t=60, b=50),
+        hovermode="closest",
+    )
+    return fig
+
+
+def violin_plot_plotly(
+    df: pd.DataFrame,
+    meta: pd.DataFrame,
+    bin_levels: list,
+    y_col: str,
+    y_label: str,
+    model_palette: dict,
+    counts: Optional[pd.DataFrame] = None,
+    title: str = "",
+    font_size: int = 11,
+    marker_size: int = 6,
+) -> go.Figure:
+    """
+    Interactive Plotly violin + dodged meta-dot plot.
+    Hover on meta dots → model name + age bin + value + 95 % CI.
+    Hover is disabled on the violin/box background.
+    """
+    x_map   = {b: i for i, b in enumerate(bin_levels)}
+    n_bins  = len(bin_levels)
+    fig     = go.Figure()
+
+    all_models = sorted(meta["model"].unique(), key=str.lower)
+    n_m        = len(all_models)
+    offsets    = np.linspace(-0.32, 0.32, n_m) if n_m > 1 else np.array([0.0])
+    off_map    = dict(zip(all_models, offsets))
+
+    # ── Violin distributions (background, no hover) ───────────────────────────
+    for b in bin_levels:
+        arr = df.loc[df["age_bin"] == b, y_col].dropna().values
+        if len(arr) == 0:
+            continue
+        fig.add_trace(go.Violin(
+            x=[x_map[b]] * len(arr), y=arr.tolist(),
+            name=str(b), showlegend=False,
+            fillcolor="#d9d9d9", line_color="#bbbbbb",
+            opacity=1.0,
+            box_visible=True,
+            box_fillcolor="rgba(255,255,255,0.8)",
+            meanline_visible=False,
+            hoverinfo="skip",
+            points=False,
+            width=0.65,
+        ))
+
+    # ── Meta dots per model with CI error bars ────────────────────────────────
+    for mi, model in enumerate(all_models):
+        col = model_palette.get(model, "#888888")
+        sub = meta[meta["model"] == model]
+        xs, ys, texts, ep, em = [], [], [], [], []
+        for _, row in sub.iterrows():
+            xi = x_map.get(row["age_bin"])
+            if xi is None:
+                continue
+            xpos = xi + off_map.get(model, 0.0)
+            pv   = row["pooled_val"]
+            lb   = row.get("ci_lb_val", np.nan)
+            ub   = row.get("ci_ub_val", np.nan)
+            has_ci = not (pd.isna(lb) or pd.isna(ub))
+            ci_str = f"{lb:.3f} – {ub:.3f}" if has_ci else "n/a"
+            xs.append(xpos)
+            ys.append(pv)
+            texts.append(
+                f"<b>{model}</b><br>{row['age_bin']}<br>"
+                f"{y_label}: {pv:.3f}<br>95% CI: [{ci_str}]"
+            )
+            ep.append(ub - pv if has_ci else 0)
+            em.append(pv - lb if has_ci else 0)
+        if not xs:
+            continue
+        fig.add_trace(go.Scatter(
+            x=xs, y=ys, mode="markers",
+            marker=dict(color=col, size=marker_size, opacity=0.75),
+            name=model,
+            legendgroup="model",
+            legendgrouptitle_text="Model" if mi == 0 else None,
+            error_y=dict(
+                type="data", symmetric=False,
+                array=ep, arrayminus=em,
+                color=col, thickness=0.9, width=4,
+            ),
+            text=texts,
+            hovertemplate="%{text}<extra></extra>",
+            showlegend=True,
+        ))
+
+    # ── k-count annotations in data coords just below y=0 ────────────────────
+    all_vals = df[y_col].dropna().values
+    y_span = float(np.nanmax(all_vals) - np.nanmin(all_vals)) if len(all_vals) else 1.0
+    k_y    = -y_span * 0.12   # scales with data: ~-4 for wMAE, ~-0.06 for R2
+    y_min  = -y_span * 0.20
+
+    cnt_map = {}
+    if counts is not None:
+        cnt_map = dict(zip(counts["age_bin"], counts["label"]))
+    cohort_col = "cohort" if "cohort" in df.columns else None
+
+    for b, xi in x_map.items():
+        lbl = cnt_map.get(b)
+        if not lbl:
+            continue
+        if cohort_col:
+            bin_df = df.loc[df["age_bin"] == b].dropna(subset=[cohort_col])
+            if "timepoint" in bin_df.columns:
+                ct_counts = (
+                    bin_df.groupby(cohort_col, observed=True)["timepoint"]
+                    .nunique()
+                    .sort_index()
+                )
+                cohort_str = "<br>".join(f"{c} (n={n})" for c, n in ct_counts.items())
+            else:
+                cohort_str = "<br>".join(sorted(bin_df[cohort_col].unique()))
+            hover_text = f"<b>{lbl}</b><br><br>Cohorts:<br>{cohort_str}"
+        else:
+            hover_text = lbl
+        fig.add_trace(go.Scatter(
+            x=[xi], y=[k_y],
+            mode="text",
+            text=[lbl],
+            textfont=dict(size=font_size, color="black"),
+            textposition="middle center",
+            hovertemplate=hover_text + "<extra></extra>",
+            showlegend=False,
+        ))
+
+    # ── Layout ────────────────────────────────────────────────────────────────
+    fig.update_layout(
+        height=540,
+        title=dict(text=title, font=dict(size=font_size + 4), x=0.5),
+        xaxis=dict(
+            tickmode="array",
+            tickvals=list(range(n_bins)),
+            ticktext=[b.replace("\n", "<br>") for b in bin_levels],
+            tickangle=30, showgrid=False, ticklabelstandoff=20,
+            title=dict(text="Developmental age group", font=dict(size=font_size + 1)),
+            tickfont=dict(size=font_size),
+        ),
+        yaxis=dict(
+            title=dict(text=y_label, font=dict(size=font_size + 1)),
+            tickfont=dict(size=font_size),
+            showgrid=False,
+            zeroline=True, zerolinecolor="#cccccc", zerolinewidth=0.8,
+        ),
+        plot_bgcolor="white", paper_bgcolor="white",
+        violinmode="overlay",
+        legend=dict(x=1.02, y=1, xanchor="left",
+                    font=dict(size=max(8, font_size - 2)), tracegroupgap=4),
+        margin=dict(l=60, r=180, t=60, b=120),
+        hovermode="closest",
+    )
     return fig
 
 
