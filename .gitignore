@@ -8,7 +8,7 @@ venv/
 .env/
 
 # Streamlit
-.streamlit/
+.streamlit/secrets.toml
 
 # Jupyter
 .ipynb_checkpoints/
