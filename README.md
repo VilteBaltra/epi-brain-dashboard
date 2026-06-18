@@ -87,7 +87,7 @@ If you use this dashboard or the underlying findings, please cite:
 
 > Staginnus M, Baltramonaityte V, Schuurmans I, et al. (2026). *Associations between epigenetic and brain age across development: Findings from the MIND consortium.* In preparation.
 
-If you reuse the dashboard code, please also reference the GitHub repository:
+If you reuse the dashboard code, we would also appreciate a reference to the GitHub repository:
 [https://github.com/VilteBaltra/epi-brain-dashboard](https://github.com/VilteBaltra/epi-brain-dashboard)
 
 A `CITATION.cff` file is included for one-click citation export via GitHub.
