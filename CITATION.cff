@@ -1,0 +1,286 @@
+cff-version: 1.2.0
+message: "If you use this dashboard or the underlying findings, please cite the paper below. If you reuse the dashboard code, please also reference the GitHub repository."
+type: software
+title: "Epi-Brain Age Dashboard"
+repository-code: "https://github.com/VilteBaltra/epi-brain-dashboard"
+license: MIT
+year: 2026
+authors:
+  - family-names: Staginnus
+    given-names: Marlene
+  - family-names: Baltramonaityte
+    given-names: Vilte
+  - family-names: Schuurmans
+    given-names: Isabel
+  - family-names: Abrishamcar
+    given-names: Sarina
+  - family-names: Bauer
+    given-names: Martin
+  - family-names: Belangero
+    given-names: Sintia
+  - family-names: Binder
+    given-names: Elisabeth
+  - family-names: Burt
+    given-names: Alex
+  - family-names: Buss
+    given-names: Claudia
+  - family-names: Chan
+    given-names: Shi Yu
+  - family-names: Chirokoff
+    given-names: Valentine
+  - family-names: Curran
+    given-names: H Valerie
+  - family-names: Czamara
+    given-names: Darina
+  - family-names: Defina
+    given-names: Serena
+  - family-names: Donald
+    given-names: Kirsty
+  - family-names: Dugré
+    given-names: Jules R.
+  - family-names: Entringer
+    given-names: Sonja
+  - family-names: Eriksson
+    given-names: Johan Gunnar
+  - family-names: Felix
+    given-names: Janine F.
+  - family-names: Fransquet
+    given-names: Peter
+  - family-names: Freeman
+    given-names: Tom P
+  - family-names: Grassi-Oliveira
+    given-names: Rodrigo
+  - family-names: Hamilton
+    given-names: Sorcha
+  - family-names: Heim
+    given-names: Christine
+  - family-names: Hüls
+    given-names: Anke
+  - family-names: Hyde
+    given-names: Luke
+  - family-names: Jones
+    given-names: Natasha
+  - family-names: Jones
+    given-names: Scott A.
+  - family-names: Karlbauer
+    given-names: Vera
+  - family-names: Karlsson
+    given-names: Hasse
+  - family-names: Karlsson
+    given-names: Linnea
+  - family-names: Koen
+    given-names: Nastassja
+  - family-names: Lawn
+    given-names: Will
+  - family-names: Michael
+    given-names: Cleanthis
+  - family-names: Mitchel
+    given-names: Colter
+  - family-names: Monk
+    given-names: Christopher
+  - family-names: Mooney
+    given-names: Michael A.
+  - family-names: Muetzel
+    given-names: Ryan
+  - family-names: Nigg
+    given-names: Joel T.
+  - family-names: Notterman
+    given-names: Daniel
+  - family-names: O'Donnell
+    given-names: Kieran
+  - family-names: Pham
+    given-names: Hung P
+  - family-names: Ong
+    given-names: Yi Ying
+  - family-names: Ota
+    given-names: Vanessa
+  - family-names: Pan
+    given-names: Pedro
+  - family-names: Paunio
+    given-names: Tiina
+  - family-names: Pfeifer
+    given-names: Jennifer H.
+  - family-names: Pingault
+    given-names: JB
+  - family-names: Pulli
+    given-names: Elmo P.
+  - family-names: Rasmussen
+    given-names: Jerod M.
+  - family-names: Rothmann
+    given-names: Leonardo
+  - family-names: Ryabinin
+    given-names: Peter
+  - family-names: Salum
+    given-names: Giovani
+  - family-names: Sawyer
+    given-names: Katherine
+  - family-names: Silk
+    given-names: Tim J.
+  - family-names: Skyberg
+    given-names: Amalia
+  - family-names: Stein
+    given-names: Dan J.
+  - family-names: Tan
+    given-names: Ai Peng
+  - family-names: Teh
+    given-names: Ai Ling
+  - family-names: Tung
+    given-names: Ryan
+  - family-names: Tuulari
+    given-names: Jetro J.
+  - family-names: Wadhwa
+    given-names: Pathik
+  - family-names: Wang
+    given-names: Dennis
+  - family-names: Wrigglesworth
+    given-names: Jo
+  - family-names: Zar
+    given-names: Heather
+  - family-names: Zhou
+    given-names: Terry
+  - family-names: Cecil
+    given-names: Charlotte
+  - family-names: Walton
+    given-names: Esther
+preferred-citation:
+  type: article
+  title: "Associations between epigenetic and brain age across development: Findings from the MIND consortium"
+  authors:
+    - family-names: Staginnus
+      given-names: Marlene
+    - family-names: Baltramonaityte
+      given-names: Vilte
+    - family-names: Schuurmans
+      given-names: Isabel
+    - family-names: Abrishamcar
+      given-names: Sarina
+    - family-names: Bauer
+      given-names: Martin
+    - family-names: Belangero
+      given-names: Sintia
+    - family-names: Binder
+      given-names: Elisabeth
+    - family-names: Burt
+      given-names: Alex
+    - family-names: Buss
+      given-names: Claudia
+    - family-names: Chan
+      given-names: Shi Yu
+    - family-names: Chirokoff
+      given-names: Valentine
+    - family-names: Curran
+      given-names: H Valerie
+    - family-names: Czamara
+      given-names: Darina
+    - family-names: Defina
+      given-names: Serena
+    - family-names: Donald
+      given-names: Kirsty
+    - family-names: Dugré
+      given-names: Jules R.
+    - family-names: Entringer
+      given-names: Sonja
+    - family-names: Eriksson
+      given-names: Johan Gunnar
+    - family-names: Felix
+      given-names: Janine F.
+    - family-names: Fransquet
+      given-names: Peter
+    - family-names: Freeman
+      given-names: Tom P
+    - family-names: Grassi-Oliveira
+      given-names: Rodrigo
+    - family-names: Hamilton
+      given-names: Sorcha
+    - family-names: Heim
+      given-names: Christine
+    - family-names: Hüls
+      given-names: Anke
+    - family-names: Hyde
+      given-names: Luke
+    - family-names: Jones
+      given-names: Natasha
+    - family-names: Jones
+      given-names: Scott A.
+    - family-names: Karlbauer
+      given-names: Vera
+    - family-names: Karlsson
+      given-names: Hasse
+    - family-names: Karlsson
+      given-names: Linnea
+    - family-names: Koen
+      given-names: Nastassja
+    - family-names: Lawn
+      given-names: Will
+    - family-names: Michael
+      given-names: Cleanthis
+    - family-names: Mitchel
+      given-names: Colter
+    - family-names: Monk
+      given-names: Christopher
+    - family-names: Mooney
+      given-names: Michael A.
+    - family-names: Muetzel
+      given-names: Ryan
+    - family-names: Nigg
+      given-names: Joel T.
+    - family-names: Notterman
+      given-names: Daniel
+    - family-names: O'Donnell
+      given-names: Kieran
+    - family-names: Pham
+      given-names: Hung P
+    - family-names: Ong
+      given-names: Yi Ying
+    - family-names: Ota
+      given-names: Vanessa
+    - family-names: Pan
+      given-names: Pedro
+    - family-names: Paunio
+      given-names: Tiina
+    - family-names: Pfeifer
+      given-names: Jennifer H.
+    - family-names: Pingault
+      given-names: JB
+    - family-names: Pulli
+      given-names: Elmo P.
+    - family-names: Rasmussen
+      given-names: Jerod M.
+    - family-names: Rothmann
+      given-names: Leonardo
+    - family-names: Ryabinin
+      given-names: Peter
+    - family-names: Salum
+      given-names: Giovani
+    - family-names: Sawyer
+      given-names: Katherine
+    - family-names: Silk
+      given-names: Tim J.
+    - family-names: Skyberg
+      given-names: Amalia
+    - family-names: Stein
+      given-names: Dan J.
+    - family-names: Tan
+      given-names: Ai Peng
+    - family-names: Teh
+      given-names: Ai Ling
+    - family-names: Tung
+      given-names: Ryan
+    - family-names: Tuulari
+      given-names: Jetro J.
+    - family-names: Wadhwa
+      given-names: Pathik
+    - family-names: Wang
+      given-names: Dennis
+    - family-names: Wrigglesworth
+      given-names: Jo
+    - family-names: Zar
+      given-names: Heather
+    - family-names: Zhou
+      given-names: Terry
+    - family-names: Cecil
+      given-names: Charlotte
+    - family-names: Walton
+      given-names: Esther
+  journal: "in preparation"
+  year: 2026
