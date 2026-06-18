@@ -773,10 +773,22 @@ with tab_3a:
             marker_size=8,
             row_height=50,
         )
+    st.caption("Each row shows individual cohort estimates (coloured dots) and the pooled meta-analytic estimate (diamond with CI). Models are grouped by generation (1st Gen / Next Gen).")
+    if pub_metric in ("wMAE_test", "MAE"):
+        _log = st.checkbox("Log scale", key="log_3a", value=False)
+        if _log:
+            # Remove the x=0 vertical refline (undefined in log space)
+            fig_3ab.layout.shapes = [
+                s for s in fig_3ab.layout.shapes
+                if not (getattr(s, "x0", None) == 0 and getattr(s, "x1", None) == 0)
+            ]
+            # Apply log scale only to the data axis (xaxis2), not the gen-label left panel (xaxis)
+            fig_3ab.update_layout(xaxis2=dict(type="log", autorange=True))
     st.plotly_chart(fig_3ab, use_container_width=True)
 
 # ── Fig 3C ────────────────────────────────────────────────────────────────────
 with tab_3c:
+    st.caption("Pooled meta-analytic estimates of brain age model performance across developmental age groups (birth–24 years).")
     _c_cfg = {
         "wMAE_test": ("wMAE_test", "Weighted MAE",  brain_b5,          meta_brain_wmae),
         "MAE":       ("MAE",       "MAE (years)",    brain_b5,          meta_brain_mae),

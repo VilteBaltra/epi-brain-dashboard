@@ -422,7 +422,8 @@ with tab_4a:
     _4a_col1.caption(
         "Each panel shows one brain model. Coloured dots = raw cohort-level associations "
         "(hover for details); black diamonds = pooled meta-analysis estimates per epi clock. "
-        "Final panel pools across all brain models."
+        "Final panel pools across all brain models. "
+        "Tip: click and drag on any panel to zoom in; double-click to reset."
     )
     _sig_only      = _4a_col2.checkbox("Sig. epi clocks only (pooled across brain models)", value=False)
     _sig_brain_only = _4a_col2.checkbox("Sig. brain models only (pooled across epi clocks)", value=False)
@@ -616,19 +617,19 @@ with tab_4a:
 
     fig_4a.update_layout(
         height=n_rows * 500,
-        title=dict(
-            text="Brain-PAR – Epi-PAR associations across model combinations",
-            font=dict(size=14),
-        ),
         legend=dict(
             title="Cohort",
-            x=1.01, y=0.5,
-            xanchor="left",
+            x=0.99, y=0.45,
+            xanchor="right",
+            yanchor="top",
             font=dict(size=8),
             itemsizing="constant",
             tracegroupgap=2,
+            bgcolor="rgba(255,255,255,0.75)",
+            bordercolor="#cccccc",
+            borderwidth=1,
         ),
-        margin=dict(l=130, r=160, t=80, b=40),
+        margin=dict(l=130, r=40, t=80, b=40),
     )
 
     st.plotly_chart(fig_4a, use_container_width=True)

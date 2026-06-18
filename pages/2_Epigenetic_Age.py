@@ -479,10 +479,22 @@ with tab_2a:
             marker_size=8,
             row_height=32,
         )
+    st.caption("Each row shows individual cohort estimates (coloured dots) and the pooled meta-analytic estimate (diamond with CI). Models are grouped by generation (Gest / 1st Gen / Next Gen).")
+    if pub_metric in ("wMAE_test", "MAE"):
+        _log = st.checkbox("Log scale", key="log_2a", value=False)
+        if _log:
+            # Remove the x=0 vertical refline (undefined in log space)
+            fig_2ab.layout.shapes = [
+                s for s in fig_2ab.layout.shapes
+                if not (getattr(s, "x0", None) == 0 and getattr(s, "x1", None) == 0)
+            ]
+            # Apply log scale only to the data axis (xaxis2), not the gen-label left panel (xaxis)
+            fig_2ab.update_layout(xaxis2=dict(type="log", autorange=True))
     st.plotly_chart(fig_2ab, use_container_width=True)
 
 # ── Fig 2C ────────────────────────────────────────────────────────────────────
 with tab_2c:
+    st.caption("Pooled meta-analytic estimates of clock performance across developmental age groups (birth–24 years).")
     _c_cfg = {
         "wMAE_test": ("log_wMAE",  "log(weighted MAE)", epi_b7,          meta_epi_wmae),
         "MAE":       ("MAE",       "MAE (years)",        epi_b7,          meta_epi_mae),
