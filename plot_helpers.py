@@ -123,6 +123,9 @@ def _pool_group(dat: pd.DataFrame, yi_col: str, vi_col: str):
     if len(dat) == 1:
         return yi[0], np.nan, np.nan, "single"
 
+    # Sanity ceiling: SE shouldn't exceed 10× the IQR of the raw values
+    _se_ceiling = 10.0 * float(np.diff(np.nanpercentile(yi, [25, 75]))[0]) + 1e-6
+
     if dat["cohort"].nunique() >= 2:
         d = dat.copy()
         d["const"] = 1.0
@@ -136,7 +139,7 @@ def _pool_group(dat: pd.DataFrame, yi_col: str, vi_col: str):
                     raise RuntimeError("not converged")
                 mu = float(fit.fe_params["const"])
                 se = float(fit.bse_fe["const"])
-                if np.isnan(mu) or np.isnan(se) or se <= 0:
+                if np.isnan(mu) or np.isnan(se) or se <= 0 or se > _se_ceiling:
                     raise RuntimeError("invalid params")
                 return mu, mu - 1.96 * se, mu + 1.96 * se, label
             except Exception:
@@ -147,7 +150,7 @@ def _pool_group(dat: pd.DataFrame, yi_col: str, vi_col: str):
             ).fit(reml=True, disp=False)
             mu = float(fit.fe_params["const"])
             se = float(fit.bse_fe["const"])
-            if not (np.isnan(mu) or np.isnan(se) or se <= 0):
+            if not (np.isnan(mu) or np.isnan(se) or se <= 0 or se > _se_ceiling):
                 return mu, mu - 1.96 * se, mu + 1.96 * se, "RE simple"
         except Exception:
             pass
