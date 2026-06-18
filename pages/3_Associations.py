@@ -168,7 +168,7 @@ with st.spinner("Running meta-analyses…"):
 # ── Publication figures ────────────────────────────────────────────────────────
 st.divider()
 st.header("Publication Figures")
-st.caption("Replicating paper figures — responds to sidebar filters above.")
+st.caption("Replicating paper figures — responds to sidebar filters on the left.")
 
 # ── Shared focus selector (applies to both Fig 4A and Fig 4C) ─────────────────
 _fc1, _fc2 = st.columns([1, 2])
@@ -468,25 +468,7 @@ with tab_4a:
     shown_cohorts = set()
     rng           = np.random.default_rng(42)
 
-    # Compute a sensible x-limit from 99th percentile of absolute betas
-    # Also incorporate overall-pooled CI bounds (epi_model == "Pooled") so small-but-significant
-    # CIs don't visually overlap zero.
-    _all_abs = _disp_raw["RLM_Estimate_scaled"].dropna().abs()
-    _raw_lim = float(_all_abs.quantile(0.99) * 1.25) if not _all_abs.empty else 0.3
-    _overall_pooled = _disp_est[
-        (_disp_est["epi_model"] == "Pooled") &
-        (_disp_est["brain_model_facet"].isin(_disp_panels))
-    ]
-    _pooled_ci_abs = pd.concat([
-        _overall_pooled["ci_lb"].dropna().abs(),
-        _overall_pooled["ci_ub"].dropna().abs(),
-    ])
-    if not _pooled_ci_abs.empty:
-        # Ensure max overall-pooled CI bound sits at ≥30% of half-axis
-        _pooled_lim = float(_pooled_ci_abs.max()) * 3.5
-        _x_lim = float(np.clip(min(_raw_lim, _pooled_lim), 0.05, 0.6))
-    else:
-        _x_lim = float(np.clip(_raw_lim, 0.05, 0.6))
+
 
     for idx, panel in enumerate(_disp_panels):
         r = idx // n_cols + 1
@@ -619,9 +601,12 @@ with tab_4a:
         range=[-0.6, len(_disp_y) - 0.4],
     )
 
-    # Set consistent x-range per panel (data-driven, no hardcoded ±1)
+    # Fixed ±0.25 x-range with ticks at -0.25, 0.00, 0.25 (matching publication figure)
     fig_4a.update_xaxes(
-        range=[-_x_lim, _x_lim],
+        range=[-0.25, 0.25],
+        tickmode="array",
+        tickvals=[-0.25, 0.00, 0.25],
+        ticktext=["-0.25", "0.00", "0.25"],
         tickfont=dict(size=8),
         title_font=dict(size=8),
         zeroline=False,
