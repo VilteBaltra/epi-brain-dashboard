@@ -96,11 +96,15 @@ _n_overlap = int(_ct_overlap["total n"].sum())
 
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("Overlap samples", f"{_n_overlap:,}",
-          help="Participants with both brain and epigenetic data across selected cohorts, including repeated measures")
-c2.metric("Effect sizes", len(filtered))
-c3.metric("Cohorts",      filtered["cohort"].nunique())
-c4.metric("Brain models", filtered["brain_model"].nunique())
-c5.metric("Epi models",   filtered["epi_model"].nunique())
+          help="Participants with both brain and epigenetic data across selected cohorts, including repeated measures across timepoints and arrays")
+c2.metric("Effect sizes", f"{len(filtered):,}",
+          help="Number of individual brain–epigenetic age association estimates (one per cohort × timepoint × brain model × epi model combination)")
+c3.metric("Cohorts", filtered["cohort"].nunique(),
+          help="Number of distinct cohorts contributing to the selected associations")
+c4.metric("Brain models", filtered["brain_model"].nunique(),
+          help="Number of distinct brain age models included in the selected associations")
+c5.metric("Epi models", filtered["epi_model"].nunique(),
+          help="Number of distinct epigenetic clocks included in the selected associations")
 
 st.dataframe(
     filtered[["cohort", "timepoint", "brain_model", "epi_model",
