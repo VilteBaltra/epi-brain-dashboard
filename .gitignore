@@ -23,3 +23,7 @@ venv/
 # Logs
 *.log
 plots/
+
+# Scripts
+converting_rds_to_csv_for_Fig2D_and_Fig3D.R 
+
