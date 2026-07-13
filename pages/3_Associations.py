@@ -830,7 +830,7 @@ with tab_4c:
         ))
 
     # ── k= labels — Scatter text traces so hover works ────────────────────
-    cnt_map = dict(zip(counts["age_bin"], counts["k"]))
+    cnt_map = dict(zip(counts["age_bin"].astype(str), counts["k"]))
 
     # Build per-bin hover text — one line per unique cohort-timepoint combination
     # Array type is embedded in the timepoint string (e.g. "9y_450k", "9y_EPIC")
