@@ -16,7 +16,8 @@ st.markdown("""
 st.title("Epigenetic & Brain Age Dashboard — MIND Consortium")
 st.markdown(
     "Exploring how epigenetic and brain age models perform across development "
-    "(birth–24 years), using data from 15 cohorts and over 21,000 samples. "
+    "(birth–24 years), using data from 15 cohorts "
+    "(20,917 epigenetic and 19,925 brain age samples including repeated measures). "
     "Navigate the pages in the sidebar to explore model performance interactively."
 )
 st.info("💡 Use the sidebar filters (cohort, age group, model) to interactively update all figures across pages.", icon=None)
@@ -26,12 +27,13 @@ st.divider()
 # ── STUDY SCOPE ───────────────────────────────────────────────────────────────
 st.subheader("Study Scope")
 
-c1, c2, c3, c4, c5 = st.columns(5)
+c1, c2, c3, c4, c5, c6 = st.columns(6)
 c1.metric("Cohorts", "15")
-c2.metric("Total Samples", "21,696")
-c3.metric("Age Range", "0–24 years")
-c4.metric("Epigenetic Clocks", "20")
-c5.metric("Brain Age Models", "8")
+c2.metric("Epi samples", "20,917")
+c3.metric("Brain samples", "19,925")
+c4.metric("Age Range", "0–24 years")
+c5.metric("Epigenetic Clocks", "20")
+c6.metric("Brain Age Models", "8")
 
 st.divider()
 

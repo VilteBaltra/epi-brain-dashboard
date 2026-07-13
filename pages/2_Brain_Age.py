@@ -34,13 +34,28 @@ st.markdown("""
 @st.cache_data
 def load_data():
     d = pd.read_csv("data/perf_brain.csv")
+    d.drop(columns=["overlap_age"], errors="ignore", inplace=True)
     d["age_bin"] = pd.Categorical(
         d["mean_age"].map(_bin_brain5),
         categories=BRAIN_BIN5_LEVELS, ordered=True,
     )
     return d
 
+@st.cache_data
+def load_ct():
+    return pd.read_csv("data/cohorts_timepoints.csv")
+
+# Mapping from perf_brain.csv cohort names → cohorts_timepoints.csv cohort names
+_COHORT_CT_MAP = {
+    "K2H Childhood":    "K2H_childhood",
+    "K2H Infancy":      "K2H_infancy",
+    "NICAP":            "NICAP_T1",
+    "Oregon ADHD-1000": "Oregon_ADHD-1000",
+    "UCI Echo":         "UCI_ECHO",
+}
+
 df = load_data()
+ct = load_ct()
 
 st.title("Brain Age Model Performance")
 
@@ -86,14 +101,13 @@ st.subheader("Summary")
 
 c1, c2, c3, c4 = st.columns(4)
 
+_ct_cohorts = [_COHORT_CT_MAP.get(c, c) for c in cohort_f]
+_ct_brain = ct[(ct["cohort"].isin(_ct_cohorts)) & (ct["modality"] == "brain")]
+_n_brain = int(_ct_brain["total n"].sum())
 c1.metric(
     "N",
-    filtered[['cohort', 'timepoint', 'N']]
-    .drop_duplicates()
-    .groupby('cohort')['N']
-    .max()
-    .sum(),
-    help="Total number of participants across selected cohorts (largest timepoint per cohort)",
+    f"{_n_brain:,}",
+    help="Total number of participants across selected cohorts (sum of samples per timepoint and array)",
 )
 _ph_mae  = c2.empty()
 _ph_wmae = c3.empty()
