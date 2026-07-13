@@ -1,0 +1,107 @@
+﻿cohort,timepoint,modality,total n,sex,age at MRI,age at DNAm,tissue,array
+ALSPAC,15up_450k,brain,802,249 (31%),20.29 (1.39),NA,NA,NA
+ALSPAC,15up_450k,epi,950,491 (51.7%),NA,17.11 (1.05),blood,450k
+ALSPAC,15up_450k,overlap_brain_epi,172,46 (26.7%),20.06 (1.36),17.34 (0.83),blood,450k
+ALSPAC,15up_epic,brain,802,249 (31%),20.29 (1.39),NA,NA,NA
+ALSPAC,15up_epic,epi,1841,967 (52.5%),NA,17.79 (0.44),blood,EPIC
+ALSPAC,15up_epic,overlap_brain_epi,305,75 (24.6%),20.20 (1.43),17.71 (0.37),blood,EPIC
+ALSPAC,cord,epi,891,456 (51.2%),NA,-0.01 (0.03),cord blood,450k
+ALSPAC,F7,epi,961,485 (50.5%),NA,7.45 (0.15),blood,450k
+BHRC,T0,brain,739,317 (42.9%),9.93 (1.85),NA,NA,NA
+BHRC,T0,epi,366,150 (41.0%),NA,9.86 (1.79),blood,EPICv2
+BHRC,T0,overlap_brain_epi,366,150 (41.0%),9.86 (1.79),9.86 (1.79),blood,EPICv2
+BHRC,T1,brain,464,195 (42%),13.04 (1.81),NA,NA,NA
+BHRC,T1,epi,145,55 (37.9%),NA,12.86 (1.69),blood,EPICv2
+BHRC,T1,overlap_brain_epi,145,55 (37.9%),12.86 (1.69),12.86 (1.69),blood,EPICv2
+BHRC,T2,brain,406,178 (43.8%),17.60 (1.85),NA,NA,NA
+BHRC,T2,epi,319,133 (41.7%),NA,17.48 (1.80),blood,EPICv2
+BHRC,T2,overlap_brain_epi,315,133 (42.2%),17.48 (1.80),17.48 (1.80),blood,EPICv2
+CannTeen,TP1,brain,61,30 (49.2%),17.17 (0.49),NA,NA,NA
+CannTeen,TP1,epi,125,59 (47.2%),NA,17.21 (0.48),saliva,EPICv1
+CannTeen,TP1,overlap_brain_epi,61,30 (49.2%),17.17 (0.49),17.15 (0.49),saliva,EPICv1
+CannTeen,TP2,brain,49,23 (46.9%),18.30 (0.58),NA,NA,NA
+DCHS,age6,brain,122,55 (45.1%),6.29 (0.40),NA,NA,NA
+DCHS,age6,epi,122,55 (45.1%),NA,5.14 (0.08),blood,EPICv2
+DCHS,age6,overlap_brain_epi,122,55 (45.1%),6.29 (0.40),5.14 (0.08),blood,EPICv2
+FinnBrain,5y,brain,172,78 (45.3%),5.40 (0.13),NA,NA,NA
+GenR,age10_450k,brain,3199,1608 (50.3%),10.13 (0.59),NA,NA,NA
+GenR,age10_450k,epi,446,225 (50.4%),NA,9.77 (0.26),blood,450k
+GenR,age10_450k,overlap_brain_epi,358,179 (50%),10.14 (0.57),9.78 (0.26),blood,450k
+GenR,age10_epic,brain,3199,1608 (50.3%),10.13 (0.59),NA,NA,NA
+GenR,age10_epic,epi,768,404 (52.6%),NA,9.77 (0.32),blood,EPICv2
+GenR,age10_epic,overlap_brain_epi,408,216 (52.9%),10.13 (0.60),9.78 (0.30),blood,EPICv2
+GenR,age14_epic,brain,2190,1176 (53.7%),14.03 (0.63),NA,NA,NA
+GenR,age14_epic,epi,1192,606 (50.8%),NA,13.59 (0.31),blood,EPICv2
+GenR,age14_epic,overlap_brain_epi,591,305 (51.6%),14.01 (0.61),13.59 (0.33),blood,EPICv2
+GenR,age18_epic,brain,2349,1206 (51.3%),18.64 (0.74),NA,NA,NA
+GenR,age18_epic,epi,947,502 (53%),NA,18.39 (0.54),blood,EPICv2
+GenR,age18_epic,overlap_brain_epi,681,339 (49.8%),18.64 (0.69),18.37 (0.54),blood,EPICv2
+GenR,age6_450k,brain,921,440 (47.8%),7.96 (0.99),NA,NA,NA
+GenR,age6_450k,epi,471,247 (52.4%),NA,6.04 (0.38),blood,450k
+GenR,age6_450k,overlap_brain_epi,96,53 (55.2%),7.97 (0.88),6.02 (0.34),blood,450k
+GenR,age6_epic,brain,921,440 (47.8%),7.96 (0.99),NA,NA,NA
+GenR,age6_epic,epi,682,343 (50.3%),NA,6.14 (0.47),blood,EPICv2
+GenR,age6_epic,overlap_brain_epi,128,60 (46.9%),7.99 (1.07),6.17 (0.48),blood,EPICv2
+GenR,cord_450k,epi,1333,658 (49.4%),NA,0.00 (0.03),cord blood,450k
+GenR,cord_epic,epi,1062,549 (51.7%),NA,0.00 (0.03),cord blood,EPICv1
+GUSTO,M3,epi,197,99 (50.3%),NA,0.26 (0.02),buccal,EPICv1
+GUSTO,M9,epi,311,157 (50.5%),NA,0.76 (0.03),buccal,EPICv1
+GUSTO,Y4,brain,283,149 (52.7%),4.58 (0.08),NA,NA,NA
+GUSTO,Y4,epi,333,162 (48.6%),NA,4.07 (0.09),buccal,EPICv1
+GUSTO,Y4,overlap_brain_epi,118,54 (45.8%),4.58 (0.08),4.06 (0.08),buccal,EPICv1
+GUSTO,Y6,brain,351,188 (53.6%),6.04 (0.12),NA,NA,NA
+GUSTO,Y6,epi,810,391 (48.3%),NA,6.05 (0.10),buccal,EPICv1
+GUSTO,Y6,overlap_brain_epi,323,175 (54.2%),6.04 (0.12),6.04 (0.11),buccal,EPICv1
+K2H_infancy,T0_cordblood,epi,189,95 (50.3%),NA,-0.00 (0.03),cord blood,EPICv2
+K2H_infancy,T0_placenta,epi,228,105 (46.1%),NA,0.00 (0.03),placenta,EPICv2
+K2H_childhood,T0_blood,brain,384,187 (48.7%),8.32 (2.02),NA,NA,NA
+K2H_childhood,T0_blood,epi,319,141 (44.2%),NA,8.19 (2.13),blood,EPICv2
+K2H_childhood,T0_blood,overlap_brain_epi,255,117 (45.9%),8.43 (2.02),8.38 (2.00),blood,EPICv2
+K2H_childhood,T0_saliva,brain,384,187 (48.7%),8.32 (2.02),NA,NA,NA
+K2H_childhood,T0_saliva,epi,363,165 (45.5%),NA,7.94 (2.19),saliva,EPICv2
+K2H_childhood,T0_saliva,overlap_brain_epi,273,134 (49.1%),8.22 (2.03),8.18 (2.01),saliva,EPICv2
+K2H_childhood,T2_blood,brain,106,46 (43.4%),9.56 (1.42),NA,NA,NA
+K2H_childhood,T2_blood,epi,83,34 (41%),NA,9.43 (1.65),blood,EPICv2
+K2H_childhood,T2_blood,overlap_brain_epi,60,21 (35%),9.66 (1.47),9.61 (1.46),blood,EPICv2
+K2H_childhood,T2_saliva,brain,106,46 (43.4%),9.56 (1.42),NA,NA,NA
+K2H_childhood,T2_saliva,epi,75,34 (45.3%),NA,9.29 (1.91),saliva,EPICv2
+K2H_childhood,T2_saliva,overlap_brain_epi,50,24 (48%),9.59 (1.56),9.58 (1.56),saliva,EPICv2
+MTwiNS,tp2_blood,brain,310,151 (48.7%),14.82 (1.99),NA,NA,NA
+MTwiNS,tp2_blood,epi,163,87 (53.4%),NA,14.60 (2.11),blood,EPICv2
+MTwiNS,tp2_blood,overlap_brain_epi,149,81 (54.4%),14.78 (1.96),14.78 (1.96),blood,EPICv2
+MTwiNS,tp3_blood,epi,159,75 (47.2%),NA,15.55 (2.26),blood,EPICv2
+MTwiNS,tp1_saliva,epi,132,80 (60.6%),NA,8.35 (1.49),saliva,EPICv2
+MTwiNS,tp2_saliva,brain,310,151 (48.7%),14.82 (1.99),NA,NA,NA
+MTwiNS,tp2_saliva,epi,193,91 (47.2%),NA,14.24 (2.37),saliva,EPICv2
+MTwiNS,tp2_saliva,overlap_brain_epi,172,85 (49.4%),14.55 (2.11),14.55 (2.11),saliva,EPICv2
+MTwiNS,tp3_saliva,epi,178,83 (46.6%),NA,15.69 (2.26),saliva,EPICv2
+NICAP_T1,T1,brain,82,35 (42.7%),10.41 (0.43),NA,NA,NA
+NICAP_T1,T1,epi,75,30 (40%),NA,10.38 (0.45),saliva,EPICv1
+NICAP_T1,T1,overlap_brain_epi,70,28 (40%),10.39 (0.45),10.39 (0.45),saliva,EPICv1
+Oregon_ADHD-1000,Y1,brain,185,98 (53%),9.96 (1.63),NA,NA,NA
+Oregon_ADHD-1000,Y1,epi,187,93 (49.7%),NA,9.86 (1.65),saliva,EPICv1
+Oregon_ADHD-1000,Y1,overlap_brain_epi,136,73 (53.7%),10.15 (1.63),9.98 (1.62),saliva,EPICv1
+Oregon_ADHD-1000,Y2,brain,57,25 (43.9%),10.07 (1.23),NA,NA,NA
+Oregon_ADHD-1000,Y3,brain,82,37 (45.1%),11.49 (1.45),NA,NA,NA
+Oregon_ADHD-1000,Y3,epi,59,28 (47.5%),NA,10.93 (1.12),saliva,EPICv2
+Oregon_ADHD-1000,Y6,epi,50,22 (44%),NA,14.49 (1.44),saliva,EPICv2
+Oregon_ADHD-1000,Y8,brain,40,13 (32.5%),16.58 (1.34),NA,NA,NA
+Oregon_ADHD-1000,Y8,epi,48,22 (45.8%),NA,16.19 (1.40),saliva,EPICv2
+FFCWS,TP1_450k,epi,704,354 (50.3%),NA,9.41 (0.43),saliva,450k
+FFCWS,TP2_450k,epi,702,371 (52.8%),NA,15.59 (0.66),saliva,450k
+FFCWS,TP1_epic,epi,1122,557 (49.6%),NA,9.43 (0.39),saliva,EPICv1
+FFCWS,TP2_epic,epi,1090,537 (49.3%),NA,15.51 (0.62),saliva,EPICv1
+FFCWS,TP2_450k,brain,198,109 (55.1%),15.85 (0.52),NA,NA,NA
+FFCWS,TP2_450k,overlap_brain_epi,114,64 (56.1%),15.85 (0.51),15.68 (0.86),saliva,450k
+TAG,w1,brain,146,146 (100%),11.65 (0.83),NA,NA,NA
+TAG,w1,epi,151,151 (100%),NA,11.67 (0.82),saliva,EPICv2
+TAG,w1,overlap_brain_epi,131,131 (100%),11.69 (0.83),11.69 (0.83),saliva,EPICv2
+TAG,w2,brain,132,132 (100%),13.21 (0.84),NA,NA,NA
+TAG,w3,brain,113,113 (100%),14.95 (0.75),NA,NA,NA
+TAG,w4,brain,92,92 (100%),16.67 (0.87),NA,NA,NA
+TAG,w5,brain,72,72 (100%),17.99 (1.01),NA,NA,NA
+TAG,w6,brain,54,54 (100%),19.68 (1.15),NA,NA,NA
+UCI_ECHO,0mo_blood,epi,127,59 (46.5%),NA,0.06 (0.04),blood,EPICv1
+UCI_ECHO,0mo_buccal,epi,133,62 (46.6%),NA,0.06 (0.04),buccal,EPICv1
+UCI_ECHO,12mo_buccal,epi,115,49 (42.6%),NA,1.02 (0.05),buccal,EPICv1
+UCI_ECHO,preschool,brain,42,21 (50%),5.12 (1.03),NA,NA,NA
