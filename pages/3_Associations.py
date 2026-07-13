@@ -35,7 +35,20 @@ def load_data():
     )
     return df
 
+@st.cache_data
+def load_ct():
+    return pd.read_csv("data/cohorts_timepoints.csv")
+
+_COHORT_CT_MAP = {
+    "K2H Childhood":    "K2H_childhood",
+    "K2H Infancy":      "K2H_infancy",
+    "NICAP":            "NICAP_T1",
+    "Oregon ADHD-1000": "Oregon_ADHD-1000",
+    "UCI Echo":         "UCI_ECHO",
+}
+
 df = load_data()
+ct = load_ct()
 
 st.title("Brain–Epigenetic Age Associations")
 
@@ -77,11 +90,17 @@ filtered = df[
 
 # ── KPIs ───────────────────────────────────────────────────────────────────────
 st.subheader("Summary")
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Effect sizes", len(filtered))
-c2.metric("Cohorts",      filtered["cohort"].nunique())
-c3.metric("Brain models", filtered["brain_model"].nunique())
-c4.metric("Epi models",   filtered["epi_model"].nunique())
+_ct_cohorts = [_COHORT_CT_MAP.get(c, c) for c in cohort_f]
+_ct_overlap = ct[(ct["cohort"].isin(_ct_cohorts)) & (ct["modality"] == "overlap_brain_epi")]
+_n_overlap = int(_ct_overlap["total n"].sum())
+
+c1, c2, c3, c4, c5 = st.columns(5)
+c1.metric("Overlap samples", f"{_n_overlap:,}",
+          help="Participants with both brain and epigenetic data across selected cohorts, including repeated measures")
+c2.metric("Effect sizes", len(filtered))
+c3.metric("Cohorts",      filtered["cohort"].nunique())
+c4.metric("Brain models", filtered["brain_model"].nunique())
+c5.metric("Epi models",   filtered["epi_model"].nunique())
 
 st.dataframe(
     filtered[["cohort", "timepoint", "brain_model", "epi_model",
