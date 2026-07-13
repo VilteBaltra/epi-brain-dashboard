@@ -19,7 +19,7 @@ st.markdown(
     "(birth–24 years), using data from 15 cohorts and over 21,000 samples. "
     "Navigate the pages in the sidebar to explore model performance interactively."
 )
-st.info("💡 Use the sidebar filters (cohort, model, age group) to interactively update all figures across pages.", icon=None)
+st.info("💡 Use the sidebar filters (cohort, age group, model) to interactively update all figures across pages.", icon=None)
 
 st.divider()
 

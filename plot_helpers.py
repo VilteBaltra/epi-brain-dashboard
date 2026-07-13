@@ -625,7 +625,7 @@ def forest_plot_plotly(
         for y_pos, lstyle in dividers:
             fig.add_shape(type="line",
                           x0=0, x1=1, xref=_xref,
-                          y0=y_pos - 0.5, y1=y_pos - 0.5, yref=_yref,
+                          y0=y_pos, y1=y_pos, yref=_yref,
                           line=dict(color="#666666", width=0.6,
                                     dash="solid" if lstyle == "solid" else "dash"))
 
@@ -895,6 +895,197 @@ def violin_plot_plotly(
                     font=dict(size=max(8, font_size - 2)), tracegroupgap=4),
         margin=dict(l=60, r=180, t=60, b=120),
         hovermode="closest",
+    )
+    return fig
+
+
+def age_slope_plot_plotly(
+    plot_df: pd.DataFrame,
+    x_label: str,
+    title: str = "",
+    model_palette: dict = None,
+    gen_labels: list = None,
+    font_size: int = 14,
+    row_height: int = 36,
+    x_range: list = None,
+) -> go.Figure:
+    """
+    Horizontal CI plot of model-specific age slopes.
+
+    plot_df must have columns:
+        model     – model name (str)
+        estimate  – point estimate
+        ci_lb     – lower 95 % CI bound
+        ci_ub     – upper 95 % CI bound
+        generation – e.g. "Gen1", "Gen2-4", "Pooled"
+
+    Rows must be in display order (bottom → top on y axis).
+    The "Pooled" row is drawn in black; all others use model_palette.
+
+    gen_labels: list of dicts with keys "label", "models", "color"
+    """
+    from plotly.subplots import make_subplots
+
+    pal = model_palette or {}
+    n   = len(plot_df)
+    y_map = {row["model"]: i for i, row in plot_df.iterrows()}
+
+    _use_sub = bool(gen_labels)
+    if _use_sub:
+        fig = make_subplots(
+            rows=1, cols=2,
+            column_widths=[0.08, 0.92],
+            shared_yaxes=False,
+            horizontal_spacing=0.22,
+        )
+        _dc = dict(row=1, col=2)
+    else:
+        fig = go.Figure()
+        _dc = {}
+
+    # ── Vertical reference line at x=0 ───────────────────────────────────────
+    _xref = "x2" if _use_sub else "x"
+    fig.add_shape(
+        type="line",
+        x0=0, x1=0, xref=_xref,
+        y0=-0.5, y1=n - 0.5, yref=("y2" if _use_sub else "y"),
+        line=dict(color="#888888", dash="dash", width=1),
+    )
+
+    # ── CI lines + diamond markers ────────────────────────────────────────────
+    for _, row in plot_df.iterrows():
+        yi       = y_map[row["model"]]
+        is_pooled = row["model"] == "Pooled"
+        color    = "black" if is_pooled else pal.get(row["model"], "#aaaaaa")
+        size     = 12 if is_pooled else 10
+        lw       = 2.0 if is_pooled else 1.5
+
+        hover = (
+            f"<b>{row['model']}</b><br>"
+            f"Estimate: {row['estimate']:.3f}<br>"
+            f"95% CI: [{row['ci_lb']:.3f}, {row['ci_ub']:.3f}]"
+        )
+
+        # CI line
+        if not (pd.isna(row["ci_lb"]) or pd.isna(row["ci_ub"])):
+            fig.add_trace(go.Scatter(
+                x=[row["ci_lb"], row["ci_ub"]], y=[yi, yi],
+                mode="lines",
+                line=dict(color=color, width=lw),
+                showlegend=False, hoverinfo="skip",
+            ), **_dc)
+
+        # Diamond point
+        fig.add_trace(go.Scatter(
+            x=[row["estimate"]], y=[yi],
+            mode="markers",
+            marker=dict(symbol="diamond", size=size, color=color),
+            showlegend=False,
+            hovertemplate=hover + "<extra></extra>",
+        ), **_dc)
+
+    # ── Horizontal dividers ───────────────────────────────────────────────────
+    # Solid line separating Pooled from model rows
+    _xdref = "x2 domain" if _use_sub else "x domain"
+    _ydref = "y2"        if _use_sub else "y"
+    fig.add_shape(
+        type="line", x0=0, x1=1, xref=_xdref,
+        y0=0.5, y1=0.5, yref=_ydref,
+        line=dict(color="#666666", width=0.8, dash="solid"),
+    )
+    # Dashed lines between generation groups
+    if gen_labels:
+        _seen = 1  # skip Pooled row (index 0)
+        for info in reversed(gen_labels):
+            present = [m for m in info["models"] if m in y_map]
+            if not present:
+                continue
+            _seen += len(present)
+            if _seen < n:
+                fig.add_shape(
+                    type="line", x0=0, x1=1, xref=_xdref,
+                    y0=_seen - 0.5, y1=_seen - 0.5, yref=_ydref,
+                    line=dict(color="#666666", width=0.6, dash="dash"),
+                )
+
+    # ── Generation label boxes in left subplot ────────────────────────────────
+    if _use_sub:
+        _fig_h = max(350, 80 + row_height * n)
+        _plot_h = _fig_h - 60 - 50
+        _PX_PER_UNIT = max(30, _plot_h / max(n + 0.5, 1))
+
+        raw_boxes = []
+        for info in gen_labels:
+            present = [m for m in info["models"] if m in y_map]
+            if not present:
+                continue
+            y_lo = min(y_map[m] for m in present) - 0.35
+            y_hi = max(y_map[m] for m in present) + 0.35
+            raw_boxes.append({"info": info, "y_lo": y_lo, "y_hi": y_hi,
+                               "height": y_hi - y_lo})
+
+        raw_boxes.sort(key=lambda b: b["y_lo"])
+        for i in range(len(raw_boxes) - 1):
+            if raw_boxes[i]["y_hi"] > raw_boxes[i + 1]["y_lo"] - 0.05:
+                raw_boxes[i]["y_hi"] = raw_boxes[i + 1]["y_lo"] - 0.05
+                raw_boxes[i]["y_lo"] = raw_boxes[i]["y_hi"] - raw_boxes[i]["height"]
+
+        for bx in raw_boxes:
+            info = bx["info"]
+            fig.add_trace(go.Scatter(
+                x=[0.1, 0.1, 0.9, 0.9, 0.1],
+                y=[bx["y_lo"], bx["y_hi"], bx["y_hi"], bx["y_lo"], bx["y_lo"]],
+                mode="lines", fill="toself", fillcolor="white",
+                line=dict(color=info["color"], width=2),
+                showlegend=False, hoverinfo="skip",
+            ), row=1, col=1)
+            fig.add_annotation(
+                xref="x", yref="y",
+                x=0.5, y=(bx["y_lo"] + bx["y_hi"]) / 2,
+                text=f"<b>{info['label']}</b>",
+                showarrow=False, textangle=-90,
+                font=dict(size=max(8, font_size - 2), color="black"),
+                xanchor="center", yanchor="middle",
+            )
+
+    # ── Axis config ───────────────────────────────────────────────────────────
+    _fig_h = max(350, 80 + row_height * n)
+    _ydata_kw = dict(
+        tickmode="array",
+        tickvals=list(range(n)),
+        ticktext=plot_df["model"].tolist(),
+        tickfont=dict(size=font_size),
+        showgrid=False,
+        range=[-0.7, n - 0.3],
+    )
+    _xdata_kw = dict(
+        title_text=x_label,
+        gridcolor="#ebebeb", zeroline=False,
+        showline=True, linecolor="#cccccc",
+        title_font=dict(size=font_size),
+        tickfont=dict(size=font_size),
+        **({"range": x_range} if x_range is not None else {}),
+    )
+    if _use_sub:
+        fig.update_xaxes(showticklabels=False, showgrid=False,
+                         zeroline=False, showline=False,
+                         range=[0, 1], row=1, col=1)
+        fig.update_yaxes(showticklabels=False, showgrid=False,
+                         zeroline=False, showline=False,
+                         range=[-0.7, n - 0.3], row=1, col=1)
+        fig.update_xaxes(**_xdata_kw, row=1, col=2)
+        fig.update_yaxes(**_ydata_kw, row=1, col=2)
+    else:
+        fig.update_layout(xaxis=_xdata_kw, yaxis=_ydata_kw)
+
+    fig.update_layout(
+        height=_fig_h,
+        title=dict(text=title, font=dict(size=font_size + 2),
+                   x=0.5, xref="paper", xanchor="center"),
+        plot_bgcolor="white", paper_bgcolor="white",
+        margin=dict(l=10, r=40, t=60, b=50),
+        hovermode="closest",
+        showlegend=False,
     )
     return fig
 

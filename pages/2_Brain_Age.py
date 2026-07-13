@@ -17,6 +17,7 @@ from plot_helpers import (
     BRAIN_BIN5_LEVELS, _bin_brain5, BRAIN_GEN_BRAINAGE, BRAIN_GEN_NEXTGEN,
     _add_fisher_z, _compute_modelwise_meta, _compute_meta_z, _compute_bin_meta,
     _compute_bin_meta_z, _gen_order_ascending, _k_counts, forest_plot_plotly, violin_plot_plotly,
+    age_slope_plot_plotly,
 )
 
 st.set_page_config(page_title="Brain Age Model Performance", layout="wide")
@@ -32,7 +33,12 @@ st.markdown("""
 # -------------------------
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/perf_brain.csv")
+    d = pd.read_csv("data/perf_brain.csv")
+    d["age_bin"] = pd.Categorical(
+        d["mean_age"].map(_bin_brain5),
+        categories=BRAIN_BIN5_LEVELS, ordered=True,
+    )
+    return d
 
 df = load_data()
 
@@ -49,11 +55,14 @@ cohort_f = st.sidebar.multiselect(
     df["cohort"].dropna().unique()
 )
 
-timepoint_f = st.sidebar.multiselect(
-    "Timepoint",
-    df["timepoint"].dropna().unique(),
-    df["timepoint"].dropna().unique()
+_bin_display = [b.replace("\n", " ") for b in BRAIN_BIN5_LEVELS]
+_display_to_bin = dict(zip(_bin_display, BRAIN_BIN5_LEVELS))
+age_group_display_f = st.sidebar.multiselect(
+    "Age group",
+    _bin_display,
+    _bin_display,
 )
+age_group_f = [_display_to_bin[d] for d in age_group_display_f]
 
 model_f = st.sidebar.multiselect(
     "Model",
@@ -66,7 +75,7 @@ model_f = st.sidebar.multiselect(
 # -------------------------
 filtered = df[
     (df["cohort"].isin(cohort_f)) &
-    (df["timepoint"].isin(timepoint_f)) &
+    (df["age_bin"].isin(age_group_f)) &
     (df["model"].isin(model_f))
 ].copy()
 
@@ -76,25 +85,42 @@ filtered = df[
 st.subheader("Summary")
 
 c1, c2, c3, c4 = st.columns(4)
-#c1.metric("N", round(filtered["N"].sum(), 3))
-#clean = filtered[['cohort', 'timepoint', 'N']].drop_duplicates() 
-#c1.metric("N", clean['N'].sum())
+
 c1.metric(
     "N",
     filtered[['cohort', 'timepoint', 'N']]
     .drop_duplicates()
     .groupby('cohort')['N']
     .max()
-    .sum()
+    .sum(),
+    help="Total number of participants across selected cohorts (largest timepoint per cohort)",
 )
 _ph_mae  = c2.empty()
 _ph_wmae = c3.empty()
 _ph_r2   = c4.empty()
-_ph_mae.metric("MAE", "…")
-_ph_wmae.metric("wMAE_test", "…")
-_ph_r2.metric("R²", "…")
+_ph_mae.metric("MAE", "…",        help="Mean Absolute Error — average absolute difference between predicted and chronological age (years)")
+_ph_wmae.metric("wMAE_test", "…", help="MAE weighted by the age range of the test sample (MAE ÷ age range); allows comparison across cohorts with different age spans")
+_ph_r2.metric("R²", "…",          help="Coefficient of determination — proportion of variance in chronological age explained by predicted age")
 
 st.dataframe(filtered, use_container_width=True)
+
+with st.expander("Column glossary"):
+    st.markdown("""
+| Column | Description |
+|---|---|
+| `wMAE_test` | MAE weighted by the age range of the test sample (MAE ÷ age range) |
+| `MAE` | Mean Absolute Error — average absolute difference between predicted and chronological age (years) |
+| `RMSE` | Root Mean Square Error — similar to MAE but penalises larger errors more heavily |
+| `nRMSE` | Normalised RMSE — RMSE divided by the age range of the sample |
+| `R2` | Coefficient of determination — proportion of variance in chronological age explained by predicted age |
+| `Pearson` | Pearson correlation between predicted and chronological age |
+| `Spearman` | Spearman rank correlation between predicted and chronological age |
+| `MAE_SE_boot` | Bootstrapped standard error of MAE |
+| `wMAE_SE_boot` | Bootstrapped standard error of wMAE |
+| `RMSE_SE_boot` | Bootstrapped standard error of RMSE |
+| `nRMSE_SE_boot` | Bootstrapped standard error of nRMSE |
+| `pearson_se` | Standard error of the Pearson correlation |
+""")
 
 # =========================================================
 # 📊 SIMPLE MODEL PLOT
@@ -228,31 +254,6 @@ def plot_model_performance(df, est_df, metric):
             ),
             text=sub["cohort"]
         ))
-        
-    # for cohort in cohorts:
-    #     sub = df[df["cohort"] == cohort]
-
-    #     fig.add_trace(go.Scatter(
-    #         x=sub["wMAE_test"],
-    #         y=sub["y_jitter"],
-    #         mode="markers",
-    #         name=str(cohort),
-    #         legendgroup="cohort",
-    #         showlegend=True,
-
-    #         marker=dict(
-    #             size=8,
-    #             symbol=cohort_symbol[cohort],
-
-    #             color=sub["mean_age"],
-    #             colorscale=colorscale,
-    #             cmin=age_min,
-    #             cmax=age_max,
-
-    #             showscale=False
-    #         ),
-    #         text=sub["cohort"]
-    #     ))
 
     # =========================================================
     # MODEL ESTIMATES
@@ -296,7 +297,7 @@ def plot_model_performance(df, est_df, metric):
         height=850,
         title="Brain Age Model Performance",
         xaxis_title=metric,
-        
+
 
         yaxis=dict(
             tickmode="array",
@@ -316,8 +317,8 @@ def plot_model_performance(df, est_df, metric):
         )
     )
 
-    fig.update_xaxes(autorange=True)    
-    
+    fig.update_xaxes(autorange=True)
+
     # =========================================================
     # GLOBAL COLORBAR (lower right)
     # =========================================================
@@ -344,153 +345,10 @@ def plot_model_performance(df, est_df, metric):
     return fig
 
 
-# -------------------------
-# OVERALL ESTIMATE
-# -------------------------
-# overall_est = pd.DataFrame({
-#     "model": ["Pooled"],
-#     "wMAE": [filtered["wMAE_test"].mean()],
-#     "ci.lb": [filtered["wMAE_test"].mean() - filtered["wMAE_test"].std()],
-#     "ci.ub": [filtered["wMAE_test"].mean() + filtered["wMAE_test"].std()],
-# })
-
-# def compute_pooled_estimate(df):
-#     tmp = df.copy()
-
-#     # keep only valid rows
-#     tmp = tmp.dropna(subset=["wMAE_test", "wMAE_SE_boot"])
-#     tmp = tmp[tmp["wMAE_SE_boot"] > 0]
-
-#     if len(tmp) == 0:
-#         return pd.DataFrame({
-#             "model": ["Pooled"],
-#             "wMAE": [np.nan],
-#             "ci.lb": [np.nan],
-#             "ci.ub": [np.nan]
-#         })
-
-#     # variance
-#     tmp["vi"] = tmp["wMAE_SE_boot"] ** 2
-
-#     # guard against extreme values
-#     tmp = tmp[np.isfinite(tmp["vi"]) & (tmp["vi"] > 0)]
-
-#     # inverse variance weights
-#     tmp["wi"] = 1 / tmp["vi"]
-
-#     # pooled estimate
-#     wmae = np.sum(tmp["wi"] * tmp["wMAE_test"]) / np.sum(tmp["wi"])
-
-#     # standard error (CRITICAL FIX)
-#     se = np.sqrt(1 / np.sum(tmp["wi"]))
-
-#     # CI
-#     ci_lb = wmae - 1.96 * se
-#     ci_ub = wmae + 1.96 * se
-
-#     return pd.DataFrame({
-#         "model": ["Pooled"],
-#         "wMAE": [wmae],
-#         "ci.lb": [ci_lb],
-#         "ci.ub": [ci_ub]
-#     })
-
-#  overall_est = compute_pooled_estimate(filtered)
-
 import statsmodels.api as sm
 from statsmodels.regression.mixed_linear_model import MixedLM
 import numpy as np
 import pandas as pd
-
-# def rma_mv_python(df):
-
-#     df = df.copy()
-
-#     # -------------------------
-#     # CLEAN DATA
-#     # -------------------------
-#     df = df.dropna(subset=["wMAE_test", "wMAE_SE_boot", "cohort", "timepoint", "model"])
-#     df = df[df["wMAE_SE_boot"] > 0]
-
-#     # -------------------------
-#     # WEIGHTS (meta-analysis variance)
-#     # -------------------------
-#     df["vi"] = df["wMAE_SE_boot"] ** 2
-#     df["weights"] = 1 / df["vi"]
-
-#     # -------------------------
-#     # GROUP STRUCTURE (random effects)
-#     # -------------------------
-#     df["cohort_tp"] = df["cohort"].astype(str) + "_" + df["timepoint"].astype(str)
-
-#     # -------------------------
-#     # DESIGN MATRICES
-#     # -------------------------
-#     endog = df["wMAE_test"]
-
-#     exog = np.ones(len(df))  # intercept only
-
-#     # random effects structure
-#     groups = df["cohort_tp"]
-
-#     re_group_model = df["model"]
-
-#     # -------------------------
-#     # MIXED MODEL (REML)
-#     # -------------------------
-#     md = MixedLM(
-#         endog,
-#         exog,
-#         groups=groups,
-#         exog_re=np.ones((len(df), 1))
-#     )
-
-#     mdf = md.fit(reml=True, weights=df["weights"])
-
-#     # -------------------------
-#     # POOLED ESTIMATE
-#     # -------------------------
-#     mu = mdf.params[0]
-#     se = mdf.bse[0]
-
-#     ci_lb = mu - 1.96 * se
-#     ci_ub = mu + 1.96 * se
-
-#     return pd.DataFrame({
-#         "model": ["Pooled"],
-#         "wMAE": [mu],
-#         "ci.lb": [ci_lb],
-#         "ci.ub": [ci_ub],
-#         "se": [se]
-#     })
-#overall_est = rma_mv_python(filtered)
-
-# def pooled_by_model(df, metric, se_col):
-#     out = []
-
-#     for m, sub in df.groupby("model"):
-#         sub = sub.dropna(subset=[metric, se_col])
-
-#         if len(sub) < 2:
-#             continuea
-
-#         yi = sub[metric].values
-#         vi = sub[se_col].values ** 2
-#         wi = 1 / vi
-
-#         mu = np.sum(wi * yi) / np.sum(wi)
-#         se = np.sqrt(1 / np.sum(wi))
-
-#         out.append({
-#             "model": m,
-#             "estimate": mu,
-#             "ci.lb": mu - 1.96 * se,
-#             "ci.ub": mu + 1.96 * se
-#         })
-
-#     return pd.DataFrame(out)
-
-# model_est = pooled_by_model(filtered, metric, se_col)
 
 se_map = {
     "MAE": "MAE_SE_boot",
@@ -514,7 +372,7 @@ def rma_mv_exact(df, metric):
     #vi = df[se_col] ** 2
     se = df[se_col].values
     vi = se ** 2
-    
+
 
     wi = 1 / vi
 
@@ -558,12 +416,6 @@ if se_col is None or se_col not in filtered.columns:
     })
 else:
     overall_est = rma_mv_exact(filtered, metric)
-    
-#overall_est = rma_mv_exact(filtered, metric)
-
-#fig_adv = plot_model_performance(filtered, overall_est)
-# fig_adv = plot_model_performance(filtered, overall_est, metric)
-# st.plotly_chart(fig_adv, use_container_width=True)
 
 
 # =========================================================
@@ -665,9 +517,9 @@ with st.spinner("Computing meta-analyses…"):
 _pooled_mae  = brain_mae_mw.loc[brain_mae_mw["model"] == "Pooled", "pooled_val"].iloc[0]
 _pooled_wmae = brain_wmae_mw.loc[brain_wmae_mw["model"] == "Pooled", "pooled_val"].iloc[0]
 _pooled_r2   = brain_r2_mw.loc[brain_r2_mw["model"] == "Pooled", "pooled_val"].iloc[0]
-_ph_mae.metric("MAE", round(float(_pooled_mae), 3))
-_ph_wmae.metric("wMAE_test", round(float(_pooled_wmae), 3))
-_ph_r2.metric("R²", round(float(_pooled_r2), 3))
+_ph_mae.metric("MAE", round(float(_pooled_mae), 3),        help="Mean Absolute Error — average absolute difference between predicted and chronological age (years)")
+_ph_wmae.metric("wMAE_test", round(float(_pooled_wmae), 3), help="MAE weighted by the age range of the test sample (MAE ÷ age range); allows comparison across cohorts with different age spans")
+_ph_r2.metric("R²", round(float(_pooled_r2), 3),           help="Coefficient of determination — proportion of variance in chronological age explained by predicted age")
 
 _pub_col1, _pub_col2 = st.columns([3, 1])
 _pub_col1.markdown("**Select metric for forest plots:**")
@@ -678,9 +530,10 @@ pub_metric = _pub_col2.selectbox(
     label_visibility="collapsed",
 )
 
-tab_3a, tab_3c = st.tabs([
+tab_3a, tab_3c, tab_3d = st.tabs([
     "Fig 3A/B — Forest plot",
     "Fig 3C — Weighted MAE by age",
+    "Fig 3D — Performance stability over development",
 ])
 
 # ── Fig 3A / 3B (metric-switchable forest plot) ───────────────────────────────
@@ -809,3 +662,73 @@ with tab_3c:
         marker_size=8,
     )
     st.plotly_chart(fig_3c, use_container_width=True)
+
+# ── Fig 3D ────────────────────────────────────────────────────────────────────
+with tab_3d:
+    st.caption(
+        "Model-specific age slopes from a meta-regression of wMAE on mean age. "
+        "Values show change in wMAE per 1-year increase in mean cohort age. "
+        "Negative = better performance with age; positive = poorer performance with age."
+    )
+
+    @st.cache_data(show_spinner=False)
+    def _load_brain_age_slopes():
+        _global = pd.read_csv("data/model_brain_wMAE_mv_global_ageint.csv")
+        _mw     = pd.read_csv("data/model_brain_wMAE_mv_modelwise_ageint.csv")
+
+        # Extract age slopes
+        _slopes = _mw[_mw["term"].str.contains("mean_age_c")].copy()
+        _slopes["model"] = (
+            _slopes["term"]
+            .str.replace(r"^model", "", regex=True)
+            .str.replace(r":mean_age_c$", "", regex=True)
+            .str.replace(r"\.mean_age_c$", "", regex=True)
+        )
+        # Brain uses raw (log-scale) estimates — no back-transformation
+        _slopes = _slopes.rename(columns={"ci.lb": "ci_lb", "ci.ub": "ci_ub"})
+
+        _GEN1 = ["Pyment", "DevBrainAge", "Centile2", "DBN", "Kaufmann", "PyBrainAge", "ENIGMA"]
+        _GEN2 = ["DunedinPACNI"]
+        _slopes["generation"] = _slopes["model"].apply(
+            lambda m: "Gen1" if m in _GEN1 else ("Gen2-4" if m in _GEN2 else "Other")
+        )
+
+        _g1  = _slopes[_slopes["generation"] == "Gen1" ].sort_values("estimate")["model"].tolist()
+        _g2  = _slopes[_slopes["generation"] == "Gen2-4"].sort_values("estimate")["model"].tolist()
+        _oth = _slopes[_slopes["generation"] == "Other" ].sort_values("estimate")["model"].tolist()
+        _order = ["Pooled"] + list(reversed(_oth)) + list(reversed(_g2)) + list(reversed(_g1))
+
+        _pr = _global[_global["term"] == "mean_age_c"].iloc[0]
+        _pooled = pd.DataFrame([{
+            "model": "Pooled", "generation": "Pooled",
+            "estimate": _pr["estimate"],
+            "ci_lb":    _pr["ci.lb"],
+            "ci_ub":    _pr["ci.ub"],
+        }])
+
+        _present_order = [m for m in _order if m in _slopes["model"].tolist() + ["Pooled"]]
+        _plot = (
+            pd.concat([_slopes[["model", "estimate", "ci_lb", "ci_ub", "generation"]], _pooled])
+            .set_index("model").loc[_present_order].reset_index()
+        )
+        return _plot, _GEN1, _GEN2
+
+    _brain_slope_df, _BRAIN_GEN1, _BRAIN_GEN2 = _load_brain_age_slopes()
+
+    _brain_gen_labels = [
+        {"label": "1st Gen",  "models": _BRAIN_GEN1, "color": "#2171b5"},
+        {"label": "Next Gen", "models": _BRAIN_GEN2, "color": "#08306b"},
+    ]
+
+    fig_3d = age_slope_plot_plotly(
+        plot_df=_brain_slope_df,
+        x_label="Change in wMAE per 1-year increase in mean age",
+        title="Brain age model performance stability over development",
+        model_palette=BRAIN_MODEL_PALETTE,
+        gen_labels=_brain_gen_labels,
+        font_size=14,
+        x_range=[-0.15, 0.2],
+    )
+    _col3d, _ = st.columns([2, 1])
+    with _col3d:
+        st.plotly_chart(fig_3d, use_container_width=True)

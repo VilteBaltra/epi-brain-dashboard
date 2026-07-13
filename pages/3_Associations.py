@@ -47,6 +47,16 @@ cohort_f = st.sidebar.multiselect(
     df["cohort"].dropna().unique(),
     df["cohort"].dropna().unique(),
 )
+
+_bin_display = [b.replace("\n", " ") for b in BRAIN_BIN5_LEVELS]
+_display_to_bin = dict(zip(_bin_display, BRAIN_BIN5_LEVELS))
+age_group_display_f = st.sidebar.multiselect(
+    "Age group",
+    _bin_display,
+    _bin_display,
+)
+age_group_f = [_display_to_bin[d] for d in age_group_display_f]
+
 brain_model_f = st.sidebar.multiselect(
     "Brain Model",
     sorted(df["brain_model"].dropna().unique()),
@@ -60,6 +70,7 @@ epi_model_f = st.sidebar.multiselect(
 
 filtered = df[
     (df["cohort"].isin(cohort_f)) &
+    (df["age_bin"].isin(age_group_f)) &
     (df["brain_model"].isin(brain_model_f)) &
     (df["epi_model"].isin(epi_model_f))
 ].copy()

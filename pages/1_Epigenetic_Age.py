@@ -14,6 +14,7 @@ from plot_helpers import (
     BIN7_LEVELS, _bin7, GEN1, GEN1_GEST, GEN2_4,
     _add_fisher_z, _compute_modelwise_meta, _compute_meta_z, _compute_bin_meta,
     _compute_bin_meta_z, _gen_order, _k_counts, forest_plot_plotly, violin_plot_plotly,
+    age_slope_plot_plotly,
 )
 
 st.set_page_config(page_title="Epigenetic Clock Performance", layout="wide")
@@ -26,7 +27,12 @@ st.markdown("""
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/perf_epi.csv")
+    d = pd.read_csv("data/perf_epi.csv")
+    d["age_bin"] = pd.Categorical(
+        d["mean_age"].map(_bin7),
+        categories=BIN7_LEVELS, ordered=True,
+    )
+    return d
 
 df = load_data()
 
@@ -40,11 +46,14 @@ cohort_f = st.sidebar.multiselect(
     df["cohort"].dropna().unique()
 )
 
-timepoint_f = st.sidebar.multiselect(
-    "Timepoint",
-    df["timepoint"].dropna().unique(),
-    df["timepoint"].dropna().unique()
+_bin_display = [b.replace("\n", " ") for b in BIN7_LEVELS]
+_display_to_bin = dict(zip(_bin_display, BIN7_LEVELS))
+age_group_display_f = st.sidebar.multiselect(
+    "Age group",
+    _bin_display,
+    _bin_display,
 )
+age_group_f = [_display_to_bin[d] for d in age_group_display_f]
 
 model_f = st.sidebar.multiselect(
     "Model",
@@ -54,30 +63,48 @@ model_f = st.sidebar.multiselect(
 
 filtered = df[
     (df["cohort"].isin(cohort_f)) &
-    (df["timepoint"].isin(timepoint_f)) &
+    (df["age_bin"].isin(age_group_f)) &
     (df["model"].isin(model_f))
 ].copy()
 
 c1, c2, c3, c4 = st.columns(4)
 
-#c1.metric("N", round(filtered["N"].sum(), 3)) # just take one N per cohort and timepoint
 c1.metric(
     "N",
     filtered[['cohort', 'timepoint', 'N']]
     .drop_duplicates()
     .groupby('cohort')['N']
     .max()
-    .sum()
+    .sum(),
+    help="Total number of participants across selected cohorts (largest timepoint per cohort)",
 )
 _ph_mae   = c2.empty()
 _ph_wmae  = c3.empty()
 _ph_r2    = c4.empty()
 # placeholders filled after meta-analysis (model-level pooled means)
-_ph_mae.metric("MAE", "…")
-_ph_wmae.metric("wMAE_test", "…")
-_ph_r2.metric("R2", "…")
+_ph_mae.metric("MAE", "…",       help="Mean Absolute Error — average absolute difference between predicted and chronological age (years)")
+_ph_wmae.metric("wMAE_test", "…", help="MAE weighted by the age range of the test sample (MAE ÷ age range); allows comparison across cohorts with different age spans")
+_ph_r2.metric("R2", "…",         help="Coefficient of determination — proportion of variance in chronological age explained by predicted age")
 
 st.dataframe(filtered, use_container_width=True)
+
+with st.expander("Column glossary"):
+    st.markdown("""
+| Column | Description |
+|---|---|
+| `wMAE_test` | MAE weighted by the age range of the test sample (MAE ÷ age range) |
+| `MAE` | Mean Absolute Error — average absolute difference between predicted and chronological age (years) |
+| `RMSE` | Root Mean Square Error — similar to MAE but penalises larger errors more heavily |
+| `nRMSE` | Normalised RMSE — RMSE divided by the age range of the sample |
+| `R2` | Coefficient of determination — proportion of variance in chronological age explained by predicted age |
+| `Pearson` | Pearson correlation between predicted and chronological age |
+| `Spearman` | Spearman rank correlation between predicted and chronological age |
+| `MAE_SE_boot` | Bootstrapped standard error of MAE |
+| `wMAE_SE_boot` | Bootstrapped standard error of wMAE |
+| `RMSE_SE_boot` | Bootstrapped standard error of RMSE |
+| `nRMSE_SE_boot` | Bootstrapped standard error of nRMSE |
+| `pearson_se` | Standard error of the Pearson correlation |
+""")
 
 _col_title, _col_metric = st.columns([4, 1])
 _col_title.subheader("Model Performance")
@@ -283,11 +310,8 @@ def _compute_epi_pub_data(raw_df: pd.DataFrame):
         sub, yi_col="log_MAE", vi_col="log_MAE_var", back_transform=True
     )
 
-    # 2B — Pearson meta (sign-flip DNAmTL so all clocks point same direction)
+    # 2B — Pearson meta (no sign-flip needed; DNAmTL already flipped in dataset)
     epi_pearson = d.copy()
-    _mask = epi_pearson["model"] == "DNAmTL"
-    epi_pearson.loc[_mask, "Pearson"]   = -epi_pearson.loc[_mask, "Pearson"]
-    epi_pearson.loc[_mask, "pearson_z"] = -epi_pearson.loc[_mask, "pearson_z"]
     pearson_meta = _compute_meta_z(epi_pearson, group_cols=["model"])
     # Add overall pooled Pearson row — exclude DunedinPACE/DNAmTL (not chronological-age clocks)
     _excluded = ["DunedinPACE", "DNAmTL"]
@@ -351,9 +375,9 @@ with st.spinner("Computing meta-analyses…"):
 _pooled_mae  = epi_mae_mw.loc[epi_mae_mw["model"] == "Pooled", "pooled_val"].iloc[0]
 _pooled_wmae = epi_wmae_mw.loc[epi_wmae_mw["model"] == "Pooled", "pooled_val"].iloc[0]
 _pooled_r2   = epi_r2_mw.loc[epi_r2_mw["model"] == "Pooled", "pooled_val"].iloc[0]
-_ph_mae.metric("MAE", round(float(_pooled_mae), 3))
-_ph_wmae.metric("wMAE_test", round(float(_pooled_wmae), 3))
-_ph_r2.metric("R2", round(float(_pooled_r2), 3))
+_ph_mae.metric("MAE", round(float(_pooled_mae), 3),       help="Mean Absolute Error — average absolute difference between predicted and chronological age (years)")
+_ph_wmae.metric("wMAE_test", round(float(_pooled_wmae), 3), help="MAE weighted by the age range of the test sample (MAE ÷ age range); allows comparison across cohorts with different age spans")
+_ph_r2.metric("R2", round(float(_pooled_r2), 3),           help="Coefficient of determination — proportion of variance in chronological age explained by predicted age")
 
 _pub_col1, _pub_col2 = st.columns([3, 1])
 _pub_col1.markdown("**Select metric for forest plots:**")
@@ -364,9 +388,10 @@ pub_metric = _pub_col2.selectbox(
     label_visibility="collapsed",
 )
 
-tab_2a, tab_2c = st.tabs([
+tab_2a, tab_2c, tab_2d = st.tabs([
     "Fig 2A/B — Forest plot",
     "Fig 2C — Weighted MAE by age",
+    "Fig 2D — Performance stability over development",
 ])
 
 # ── Fig 2A / 2B (metric-switchable forest plot) ───────────────────────────────
@@ -376,7 +401,7 @@ with tab_2a:
                   "Wu", "AltumAge", "cAge", "skinHorvath", "PedBE", "Horvath2013"]
     _A_GEST    = ["EPIC", "Knight", "Bohlin"]
 
-    _P_NEXT_GEN = ["DNAmTL", "DunedinPACE", "AdaptAge", "DamAge", "PhenoAge", "PCGrimAge"]
+    _P_NEXT_GEN = ["DunedinPACE", "AdaptAge", "DNAmTL", "DamAge", "PhenoAge", "PCGrimAge"]
     _P_GEN1     = ["PCBrainAge", "Wu", "Hannum", "PedBE", "Horvath2013",
                    "CorticalClock", "AltumAge", "ZhangBLUP", "ZhangEN", "cAge", "skinHorvath"]
     _P_GEST     = ["Knight", "EPIC", "Bohlin"]
@@ -515,3 +540,76 @@ with tab_2c:
         marker_size=8,
     )
     st.plotly_chart(fig_2c, use_container_width=True)
+
+# ── Fig 2D ────────────────────────────────────────────────────────────────────
+with tab_2d:
+    st.caption(
+        "Model-specific age slopes from a meta-regression of log(wMAE) on mean age. "
+        "Values show % change in geometric mean wMAE per 1-year increase in mean cohort age. "
+        "Negative = better performance with age; positive = poorer performance with age."
+    )
+
+    @st.cache_data(show_spinner=False)
+    def _load_epi_age_slopes():
+        _global = pd.read_csv("data/model_epi_wMAE_mv_global_ageint_logscale.csv")
+        _mw     = pd.read_csv("data/model_epi_wMAE_mv_modelwise_ageint.csv")
+
+        # Extract age slopes (rows with mean_age_c interaction)
+        _slopes = _mw[_mw["term"].str.contains("mean_age_c")].copy()
+        _slopes["model"] = (
+            _slopes["term"]
+            .str.replace(r"^model", "", regex=True)
+            .str.replace(r":mean_age_c$", "", regex=True)
+            .str.replace(r"\.mean_age_c$", "", regex=True)
+        )
+        # Back-transform log → % change
+        for col, src in [("estimate", "estimate"), ("ci_lb", "ci.lb"), ("ci_ub", "ci.ub")]:
+            _slopes[col] = (np.exp(_slopes[src]) - 1) * 100
+
+        # Generation assignment
+        _GEN1  = ["ZhangEN", "ZhangBLUP", "Wu", "skinHorvath", "PedBE",
+                  "PCBrainAge", "Horvath2013", "Hannum", "CorticalClock", "cAge", "AltumAge"]
+        _GEN2  = ["PCGrimAge", "PhenoAge", "DamAge", "AdaptAge", "DunedinPACE"]
+        _slopes["generation"] = _slopes["model"].apply(
+            lambda m: "Gen1" if m in _GEN1 else ("Gen2-4" if m in _GEN2 else "Other")
+        )
+
+        # Sort within generations (ascending estimate = top to bottom)
+        _g1  = _slopes[_slopes["generation"] == "Gen1" ].sort_values("estimate")["model"].tolist()
+        _g2  = _slopes[_slopes["generation"] == "Gen2-4"].sort_values("estimate")["model"].tolist()
+        _oth = _slopes[_slopes["generation"] == "Other" ].sort_values("estimate")["model"].tolist()
+        _order = ["Pooled"] + list(reversed(_oth)) + list(reversed(_g2)) + list(reversed(_g1))
+
+        # Pooled from global
+        _pr = _global[_global["term"] == "mean_age_c"].iloc[0]
+        _pooled = pd.DataFrame([{
+            "model": "Pooled", "generation": "Pooled",
+            "estimate": (np.exp(_pr["estimate"]) - 1) * 100,
+            "ci_lb":    (np.exp(_pr["ci.lb"])    - 1) * 100,
+            "ci_ub":    (np.exp(_pr["ci.ub"])    - 1) * 100,
+        }])
+
+        _plot = (
+            pd.concat([_slopes[["model", "estimate", "ci_lb", "ci_ub", "generation"]], _pooled])
+            .set_index("model").loc[_order].reset_index()
+        )
+        return _plot, _GEN1, _GEN2
+
+    _epi_slope_df, _EPI_GEN1, _EPI_GEN2 = _load_epi_age_slopes()
+
+    _epi_gen_labels = [
+        {"label": "Gen1",   "models": _EPI_GEN1, "color": "#2171b5"},
+        {"label": "Gen2-4", "models": _EPI_GEN2, "color": "#08306b"},
+    ]
+
+    fig_2d = age_slope_plot_plotly(
+        plot_df=_epi_slope_df,
+        x_label="% change in geometric mean wMAE per 1-year increase in mean age",
+        title="Epigenetic clock performance stability over development",
+        model_palette=EPI_MODEL_PALETTE,
+        gen_labels=_epi_gen_labels,
+        font_size=14,
+    )
+    _col2d, _ = st.columns([2, 1])
+    with _col2d:
+        st.plotly_chart(fig_2d, use_container_width=True)
