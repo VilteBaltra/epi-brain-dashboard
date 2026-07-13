@@ -830,10 +830,9 @@ with tab_4c:
         ))
 
     # ── k= labels — Scatter text traces so hover works ────────────────────
-    cnt_map = dict(zip(counts["age_bin"].astype(str), counts["k"]))
+    # Build per-bin hover text and k counts directly from _raw_4c
+    # (avoids pandas Categorical/StringDtype issues in _k_counts on newer pandas)
 
-    # Build per-bin hover text — one line per unique cohort-timepoint combination
-    # Array type is embedded in the timepoint string (e.g. "9y_450k", "9y_EPIC")
     def _parse_array(tp):
         tp_up = str(tp).upper()
         for arr in ["EPIC", "450K", "850K", "27K"]:
@@ -841,12 +840,14 @@ with tab_4c:
                 return arr
         return None
 
+    cnt_map = {}
     _bin_hover = {}
     for b in bin_x.keys():
-        _sub = _raw_4c[_raw_4c["age_bin"].astype(str) == str(b)].dropna(subset=["cohort", "timepoint", "mean_age"])
+        _sub = _raw_4c.loc[_raw_4c["age_bin"] == b].dropna(subset=["cohort", "timepoint", "mean_age"])
         if _sub.empty:
             continue
         _uniq = _sub.groupby(["cohort", "timepoint"])["mean_age"].mean().reset_index().sort_values("mean_age")
+        cnt_map[str(b)] = len(_uniq)
         lines = []
         for _, row in _uniq.iterrows():
             age_str = f"{row['mean_age']:.1f} y"
@@ -858,7 +859,7 @@ with tab_4c:
     y_floor = _raw_4c["RLM_Estimate_scaled"].min(skipna=True) if not _raw_4c.empty else -0.3
     k_y = y_floor - 0.05
     for b, xi in bin_x.items():
-        k = cnt_map.get(b)
+        k = cnt_map.get(str(b))
         if k is not None:
             detail = _bin_hover.get(str(b), "")
             fig_4c.add_trace(go.Scatter(
