@@ -170,10 +170,30 @@ def _compute_assoc_pub_data(raw_df: pd.DataFrame):
             assoc_meta_violin, counts, combi_palette)
 
 
+@st.cache_data
+def _load_r_assoc_meta():
+    try:
+        r_est = pd.read_csv("data/assoc_plot_est.csv").rename(columns={
+            "b":     "pooled_beta",
+            "ci.lb": "ci_lb",
+            "ci.ub": "ci_ub",
+        })
+        r_est["brain_model_facet"] = r_est["brain_model"].apply(
+            lambda x: "Epi clocks (pooled)" if x == "Pooled" else x
+        )
+        return r_est
+    except FileNotFoundError:
+        return None
+
 with st.spinner("Running meta-analyses…"):
     (plot_est, pair_raw, epi_y_order, facet_panels,
      pooled_div_y, gen_div_y,
      assoc_meta_violin, counts, combi_palette) = _compute_assoc_pub_data(filtered)
+
+if len(filtered) == len(df):
+    _r_plot_est = _load_r_assoc_meta()
+    if _r_plot_est is not None:
+        plot_est = _r_plot_est
 
 
 # ── Publication figures ────────────────────────────────────────────────────────
@@ -644,6 +664,10 @@ with tab_4a:
     )
 
     st.plotly_chart(fig_4a, use_container_width=True)
+    if len(filtered) == len(df):
+        st.caption("Pooled estimates from multilevel random-effects meta-analysis (rma.mv, REML; metafor R package).")
+    else:
+        st.caption("Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate; applied to filtered subset).")
 
 
 # ── Fig 4B ────────────────────────────────────────────────────────────────────

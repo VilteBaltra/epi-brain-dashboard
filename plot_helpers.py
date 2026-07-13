@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import seaborn as sns
 import plotly.graph_objects as go
-from statsmodels.regression.mixed_linear_model import MixedLM
 
 warnings.filterwarnings("ignore")
 
@@ -110,55 +109,35 @@ def _add_fisher_z(df: pd.DataFrame) -> pd.DataFrame:
 
 def _pool_group(dat: pd.DataFrame, yi_col: str, vi_col: str):
     """
-    Four-step convergence cascade:
-      1) MixedLM + L-BFGS-B
-      2) MixedLM + Nelder-Mead
-      3) MixedLM without explicit random-slope term
-      4) IV-weighted fixed-effect mean
+    DerSimonian-Laird random-effects meta-analysis using known within-study variances.
+    Weights each study by 1/(vi + tau²), where tau² is the DL method-of-moments
+    estimate — the same variance-weighted approach used by R's metafor::rma().
+    Always converges; no optimiser needed.
     Returns (mu, lower, upper, method_label).
     """
-    yi = dat[yi_col].values
-    vi = dat[vi_col].values
+    yi = dat[yi_col].values.astype(float)
+    vi = dat[vi_col].values.astype(float)
+    k  = len(dat)
 
-    if len(dat) == 1:
-        return yi[0], np.nan, np.nan, "single"
+    if k == 1:
+        return float(yi[0]), np.nan, np.nan, "single"
 
-    # Sanity ceiling: SE shouldn't exceed 10× the IQR of the raw values
-    _se_ceiling = 10.0 * float(np.diff(np.nanpercentile(yi, [25, 75]))[0]) + 1e-6
+    # ── Fixed-effect (inverse-variance) weights ────────────────────────────
+    w     = 1.0 / vi
+    mu_fe = float((w * yi).sum() / w.sum())
 
-    if dat["cohort"].nunique() >= 2:
-        d = dat.copy()
-        d["const"] = 1.0
-        for method, label in [("lbfgs", "RE lbfgs"), ("nm", "RE nm")]:
-            try:
-                fit = MixedLM(
-                    endog=d[yi_col], exog=d[["const"]],
-                    groups=d["cohort"], exog_re=d[["const"]],
-                ).fit(reml=True, method=method, disp=False)
-                if not fit.converged:
-                    raise RuntimeError("not converged")
-                mu = float(fit.fe_params["const"])
-                se = float(fit.bse_fe["const"])
-                if np.isnan(mu) or np.isnan(se) or se <= 0 or se > _se_ceiling:
-                    raise RuntimeError("invalid params")
-                return mu, mu - 1.96 * se, mu + 1.96 * se, label
-            except Exception:
-                continue
-        try:
-            fit = MixedLM(
-                endog=d[yi_col], exog=d[["const"]], groups=d["cohort"],
-            ).fit(reml=True, disp=False)
-            mu = float(fit.fe_params["const"])
-            se = float(fit.bse_fe["const"])
-            if not (np.isnan(mu) or np.isnan(se) or se <= 0 or se > _se_ceiling):
-                return mu, mu - 1.96 * se, mu + 1.96 * se, "RE simple"
-        except Exception:
-            pass
+    # ── Cochran's Q and DerSimonian-Laird tau² ─────────────────────────────
+    Q    = float((w * (yi - mu_fe) ** 2).sum())
+    c    = float(w.sum() - (w ** 2).sum() / w.sum())
+    tau2 = max(0.0, (Q - (k - 1)) / c)
 
-    w  = 1.0 / vi
-    mu = float((w * yi).sum() / w.sum())
-    se = float(np.sqrt(1.0 / w.sum()))
-    return mu, mu - 1.96 * se, mu + 1.96 * se, "IV-weighted"
+    # ── Random-effects pooled estimate ─────────────────────────────────────
+    w_re  = 1.0 / (vi + tau2)
+    mu_re = float((w_re * yi).sum() / w_re.sum())
+    se_re = float(np.sqrt(1.0 / w_re.sum()))
+
+    method = "DL-RE" if tau2 > 0 else "IV-FE"
+    return mu_re, mu_re - 1.96 * se_re, mu_re + 1.96 * se_re, method
 
 
 def _compute_bin_meta(df: pd.DataFrame, yi_col: str, vi_col: str) -> pd.DataFrame:

@@ -507,11 +507,35 @@ def _compute_brain_pub_data(raw_df: pd.DataFrame):
             counts)
 
 
+@st.cache_data
+def _load_r_brain_meta():
+    """Load pre-computed R meta-analytic estimates (used when no filters applied)."""
+    try:
+        wmae = pd.concat([
+            pd.read_csv("data/model_brain_wMAE_mv_global.csv").rename(columns={"wMAE": "pooled_val", "ci.lb": "ci_lb", "ci.ub": "ci_ub"}),
+            pd.read_csv("data/model_brain_wMAE_mv_modelwise.csv").rename(columns={"wMAE": "pooled_val", "ci.lb": "ci_lb", "ci.ub": "ci_ub"}),
+        ], ignore_index=True)
+        pearson = pd.concat([
+            pd.read_csv("data/model_brain_pearson_mv_global.csv").rename(columns={"pearson_r": "pooled_val", "ci.lb": "ci_lb", "ci.ub": "ci_ub"}),
+            pd.read_csv("data/model_brain_pearson_mv_modelwise.csv").rename(columns={"pearson_r": "pooled_val", "ci.lb": "ci_lb", "ci.ub": "ci_ub"}),
+        ], ignore_index=True)
+        return wmae, pearson
+    except FileNotFoundError:
+        return None, None
+
+
 with st.spinner("Computing meta-analyses…"):
     (brain_sub, brain_wmae_mw, brain_mae_mw, brain_r2_mw, brain_full, brain_pearson_mw,
      brain_b5, brain_pearson_b5,
      meta_brain_wmae, meta_brain_mae, meta_brain_pearson, meta_brain_r2,
      brain_counts) = _compute_brain_pub_data(filtered)
+
+# Hybrid: use R estimates (incl. Pooled) for forest plots when no filters applied
+if len(filtered) == len(df):
+    _r_wmae, _r_pearson = _load_r_brain_meta()
+    if _r_wmae is not None:
+        brain_wmae_mw    = _r_wmae
+        brain_pearson_mw = _r_pearson
 
 # Fill top metrics with model-level pooled estimates
 _pooled_mae  = brain_mae_mw.loc[brain_mae_mw["model"] == "Pooled", "pooled_val"].iloc[0]
@@ -638,6 +662,10 @@ with tab_3a:
             # Apply log scale only to the data axis (xaxis2), not the gen-label left panel (xaxis)
             fig_3ab.update_layout(xaxis2=dict(type="log", autorange=True))
     st.plotly_chart(fig_3ab, use_container_width=True)
+    if len(filtered) == len(df):
+        st.caption("Pooled estimates from multilevel random-effects meta-analysis (rma.mv, REML; metafor R package).")
+    else:
+        st.caption("Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate; applied to filtered subset).")
 
 # ── Fig 3C ────────────────────────────────────────────────────────────────────
 with tab_3c:

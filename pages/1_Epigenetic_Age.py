@@ -365,11 +365,35 @@ def _compute_epi_pub_data(raw_df: pd.DataFrame):
             counts)
 
 
+@st.cache_data
+def _load_r_epi_meta():
+    """Load pre-computed R meta-analytic estimates (used when no filters applied)."""
+    try:
+        wmae = pd.concat([
+            pd.read_csv("data/model_epi_wMAE_mv_global.csv").rename(columns={"wMAE": "pooled_val", "ci.lb": "ci_lb", "ci.ub": "ci_ub"}),
+            pd.read_csv("data/model_epi_wMAE_mv_modelwise.csv").rename(columns={"wMAE": "pooled_val", "ci.lb": "ci_lb", "ci.ub": "ci_ub"}),
+        ], ignore_index=True)
+        pearson = pd.concat([
+            pd.read_csv("data/model_epi_pearson_mv_global.csv").rename(columns={"pearson_r": "pooled_val", "ci.lb": "ci_lb", "ci.ub": "ci_ub"}),
+            pd.read_csv("data/model_epi_pearson_mv_modelwise.csv").rename(columns={"pearson_r": "pooled_val", "ci.lb": "ci_lb", "ci.ub": "ci_ub"}),
+        ], ignore_index=True)
+        return wmae, pearson
+    except FileNotFoundError:
+        return None, None
+
+
 with st.spinner("Computing meta-analyses…"):
     (epi_sub, epi_wmae_mw, epi_mae_mw, epi_r2_mw, epi_pearson_df, epi_pearson_mw,
      epi_b7, epi_pearson_b7,
      meta_epi_wmae, meta_epi_mae, meta_epi_pearson, meta_epi_r2,
      epi_counts) = _compute_epi_pub_data(filtered)
+
+# Hybrid: use R estimates (incl. Pooled) for forest plots when no filters applied
+if len(filtered) == len(df):
+    _r_wmae, _r_pearson = _load_r_epi_meta()
+    if _r_wmae is not None:
+        epi_wmae_mw    = _r_wmae
+        epi_pearson_mw = _r_pearson
 
 # Fill top metrics with model-level pooled estimates
 _pooled_mae  = epi_mae_mw.loc[epi_mae_mw["model"] == "Pooled", "pooled_val"].iloc[0]
@@ -516,6 +540,10 @@ with tab_2a:
             # Apply log scale only to the data axis (xaxis2), not the gen-label left panel (xaxis)
             fig_2ab.update_layout(xaxis2=dict(type="log", autorange=True))
     st.plotly_chart(fig_2ab, use_container_width=True)
+    if len(filtered) == len(df):
+        st.caption("Pooled estimates from multilevel random-effects meta-analysis (rma.mv, REML; metafor R package).")
+    else:
+        st.caption("Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate; applied to filtered subset).")
 
 # ── Fig 2C ────────────────────────────────────────────────────────────────────
 with tab_2c:
