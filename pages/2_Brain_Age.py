@@ -105,9 +105,9 @@ _ct_cohorts = [_COHORT_CT_MAP.get(c, c) for c in cohort_f]
 _ct_brain = ct[(ct["cohort"].isin(_ct_cohorts)) & (ct["modality"] == "brain")]
 _n_brain = int(_ct_brain["total n"].sum())
 c1.metric(
-    "N",
+    "Brain samples",
     f"{_n_brain:,}",
-    help="Total number of participants across selected cohorts (sum of samples per timepoint and array)",
+    help="Number of brain age samples across selected cohorts, including repeated measures across timepoints and arrays",
 )
 _ph_mae  = c2.empty()
 _ph_wmae = c3.empty()

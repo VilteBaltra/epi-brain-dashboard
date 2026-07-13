@@ -87,9 +87,9 @@ _ct_cohorts = [_COHORT_CT_MAP.get(c, c) for c in cohort_f]
 _ct_epi = ct[(ct["cohort"].isin(_ct_cohorts)) & (ct["modality"] == "epi")]
 _n_epi = int(_ct_epi["total n"].sum())
 c1.metric(
-    "N",
+    "Epi samples",
     f"{_n_epi:,}",
-    help="Total number of participants across selected cohorts (sum of samples per timepoint and array)",
+    help="Number of epigenetic samples across selected cohorts, including repeated measures across timepoints and arrays",
 )
 _ph_mae   = c2.empty()
 _ph_wmae  = c3.empty()
