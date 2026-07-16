@@ -424,26 +424,6 @@ def _make_chord_fig(pm, brain_models, epi_models):
             legendgroup="dir", legendgrouptitle_text="Direction",
         ))
 
-    # Strength legend: |β|=0 (no symbol), then min non-zero and max as lines
-    _b_abs    = pm["pooled_beta"].abs().dropna()
-    _b_max    = _b_abs.max()
-    _b_nonzero = _b_abs[_b_abs > 0]
-    _b_min_nz = _b_nonzero.min() if len(_b_nonzero) > 0 else _b_max
-    # Zero entry — invisible marker so only label text appears
-    fig.add_trace(go.Scatter(
-        x=[None], y=[None], mode="markers",
-        marker=dict(color="rgba(0,0,0,0)", size=0, line=dict(width=0)),
-        name="|β| = 0", showlegend=True,
-        legendgroup="strength", legendgrouptitle_text="Strength",
-    ))
-    for abs_b in [_b_min_nz, _b_max]:
-        w = 1 + 5 * (abs_b / _b_max)   # scaled for legend visibility (1–6 px)
-        fig.add_trace(go.Scatter(
-            x=[None], y=[None], mode="lines",
-            line=dict(color="#555555", width=w),
-            name=f"|β| = {abs_b:.3f}", showlegend=True,
-            legendgroup="strength", legendgrouptitle_text="Strength",
-        ))
 
     fig.update_layout(
         height=680,
@@ -742,6 +722,10 @@ with tab_4b:
 
     fig_4b = _make_chord_fig(_pm_4b, _brain_4b, _epi_4b)
     st.plotly_chart(fig_4b, use_container_width=True)
+    if len(filtered) == len(df):
+        st.caption("Pooled estimates from multilevel random-effects meta-analysis (rma.mv, REML; metafor R package).")
+    else:
+        st.caption("Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate; applied to filtered subset).")
 
 
 # ── Fig 4C ────────────────────────────────────────────────────────────────────
@@ -750,7 +734,8 @@ with tab_4c:
     st.caption(
         "Violin + boxplot of association betas by brain developmental age group. "
         "Coloured dots = pooled meta-analysis estimates per model combination "
-        "(hover for details; no legend — too many combinations)."
+        "(hover for details; no legend — too many combinations). "
+        "Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate)."
     )
 
     fig_4c = go.Figure()
