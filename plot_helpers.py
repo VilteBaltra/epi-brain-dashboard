@@ -549,7 +549,7 @@ def forest_plot_plotly(
             continue
         fig.add_trace(go.Scatter(
             x=xs, y=ys, mode="markers",
-            marker=dict(color=pal.get(cohort, "#aaaaaa"), size=marker_size, opacity=0.5),
+            marker=dict(color=pal.get(cohort, "#aaaaaa"), size=marker_size, opacity=0.25),
             name=str(cohort),
             legendgroup="cohort",
             legendgrouptitle_text="Source" if ci == 0 else None,

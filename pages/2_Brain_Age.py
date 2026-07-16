@@ -683,7 +683,7 @@ with tab_3a:
 
 # ── Fig 3C ────────────────────────────────────────────────────────────────────
 with tab_3c:
-    st.caption("Pooled meta-analytic estimates of brain age model performance across developmental age groups (birth–24 years).")
+    st.caption("Pooled meta-analytic estimates of brain age model performance across developmental age groups (birth–24 years). Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate).")
     _c_cfg = {
         "wMAE_test": ("wMAE_test", "Weighted MAE",  brain_b5,          meta_brain_wmae),
         "MAE":       ("MAE",       "MAE (years)",    brain_b5,          meta_brain_mae),

@@ -560,7 +560,7 @@ with tab_2a:
 
 # ── Fig 2C ────────────────────────────────────────────────────────────────────
 with tab_2c:
-    st.caption("Pooled meta-analytic estimates of clock performance across developmental age groups (birth–24 years).")
+    st.caption("Pooled meta-analytic estimates of clock performance across developmental age groups (birth–24 years). Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate).")
     _c_cfg = {
         "wMAE_test": ("log_wMAE",  "log(weighted MAE)", epi_b7,          meta_epi_wmae),
         "MAE":       ("MAE",       "MAE (years)",        epi_b7,          meta_epi_mae),
