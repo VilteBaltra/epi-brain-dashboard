@@ -40,14 +40,14 @@ st.divider()
 # ── COHORT DATA (used by both map and table) ──────────────────────────────────
 cohorts = pd.DataFrame([
     ["ALSPAC",            "UK",              "Population-based birth cohort",                       3, "172–1841",  "0–20"],
-    ["BHRC",              "Brazil",          "High-risk cohort",                                    3, "406–739",   "10–17"],
+    ["BHRC",              "Brazil",          "High-risk cohort",                                    3, "145–739",   "9–17"],
     ["DCHS",              "South Africa",    "High-risk cohort",                                    1, "122",       "5"],
     ["GUSTO",             "Singapore",       "Population-based birth cohort",                       4, "118–810",   "0–6"],
     ["K2H infancy",       "Germany",         "High-risk cohort",                                    1, "189–228",   "0"],
     ["K2H childhood",     "Germany",         "High-risk cohort",                                    2, "50–384",    "7–9"],
     ["MTwiNS",            "US",              "Twin study, high-risk population-based birth cohort", 3, "149–310",   "8–15"],
     ["Oregon ADHD-1000",  "US",              "Community-recruited case-control cohort",             5, "40–187",    "9–17"],
-    ["CannTeen",          "UK",              "High-risk cohort",                                    2, "54–125",    "16–17"],
+    ["CannTeen",          "UK",              "High-risk cohort",                                    2, "49–125",    "17–18"],
     ["FinnBrain",         "Finland",         "Population-based birth cohort",                       1, "172",       "5"],
     ["GenR",              "The Netherlands", "Population-based birth cohort",                       5, "96–3199",   "0–18"],
     ["NICAP",             "Australia",       "Community cohort, screening for ADHD",                1, "70–82",     "10"],
