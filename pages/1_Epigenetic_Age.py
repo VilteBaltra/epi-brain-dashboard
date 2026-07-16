@@ -28,6 +28,7 @@ st.markdown("""
 def load_data():
     d = pd.read_csv("data/perf_epi.csv")
     d.drop(columns=["X", "X.1", "overlap_age"], errors="ignore", inplace=True)
+    d["model"] = d["model"].replace(RENAME)
     d["age_bin"] = pd.Categorical(
         d["mean_age"].map(_bin7),
         categories=BIN7_LEVELS, ordered=True,
@@ -301,9 +302,7 @@ st.caption("Replicating paper figures — responds to sidebar filters on the lef
 @st.cache_data(show_spinner=False)
 def _compute_epi_pub_data(raw_df: pd.DataFrame):
     """Run all meta-analyses for Figs 2A–2C. Cached after first load."""
-    # Apply renames and add Fisher-z columns
     d = raw_df.copy()
-    d["model"] = d["model"].replace(RENAME)
     d = _add_fisher_z(d)
 
     # Sub-dataset (exclude clocks not used in performance analyses)

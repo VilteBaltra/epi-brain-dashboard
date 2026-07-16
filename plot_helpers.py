@@ -818,11 +818,11 @@ def violin_plot_plotly(
 
     cnt_map = {}
     if counts is not None:
-        cnt_map = dict(zip(counts["age_bin"], counts["label"]))
+        cnt_map = dict(zip(counts["age_bin"].astype(str), counts["label"]))
     cohort_col = "cohort" if "cohort" in df.columns else None
 
     for b, xi in x_map.items():
-        lbl = cnt_map.get(b)
+        lbl = cnt_map.get(str(b))
         if not lbl:
             continue
         if cohort_col:
