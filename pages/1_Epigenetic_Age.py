@@ -588,7 +588,6 @@ with tab_2d:
         "Values show % change in geometric mean wMAE per 1-year increase in mean cohort age. "
         "Negative = better performance with age; positive = poorer performance with age."
     )
-
     @st.cache_data(show_spinner=False)
     def _load_epi_age_slopes():
         _global = pd.read_csv("data/model_epi_wMAE_mv_global_ageint_logscale.csv")
@@ -635,21 +634,24 @@ with tab_2d:
         )
         return _plot, _GEN1, _GEN2
 
-    _epi_slope_df, _EPI_GEN1, _EPI_GEN2 = _load_epi_age_slopes()
+    if pub_metric != "wMAE_test":
+        st.info("This figure is only available for the wMAE metric.")
+    else:
+        _epi_slope_df, _EPI_GEN1, _EPI_GEN2 = _load_epi_age_slopes()
 
-    _epi_gen_labels = [
-        {"label": "Gen1",   "models": _EPI_GEN1, "color": "#2171b5"},
-        {"label": "Gen2-4", "models": _EPI_GEN2, "color": "#08306b"},
-    ]
+        _epi_gen_labels = [
+            {"label": "Gen1",   "models": _EPI_GEN1, "color": "#2171b5"},
+            {"label": "Gen2-4", "models": _EPI_GEN2, "color": "#08306b"},
+        ]
 
-    fig_2d = age_slope_plot_plotly(
-        plot_df=_epi_slope_df,
-        x_label="% change in geometric mean wMAE per 1-year increase in mean age",
-        title="Epigenetic clock performance stability over development",
-        model_palette=EPI_MODEL_PALETTE,
-        gen_labels=_epi_gen_labels,
-        font_size=14,
-    )
-    _col2d, _ = st.columns([2, 1])
-    with _col2d:
-        st.plotly_chart(fig_2d, use_container_width=True)
+        fig_2d = age_slope_plot_plotly(
+            plot_df=_epi_slope_df,
+            x_label="% change in geometric mean wMAE per 1-year increase in mean age",
+            title="Epigenetic clock performance stability over development",
+            model_palette=EPI_MODEL_PALETTE,
+            gen_labels=_epi_gen_labels,
+            font_size=14,
+        )
+        _col2d, _ = st.columns([2, 1])
+        with _col2d:
+            st.plotly_chart(fig_2d, use_container_width=True)

@@ -755,22 +755,25 @@ with tab_3d:
         )
         return _plot, _GEN1, _GEN2
 
-    _brain_slope_df, _BRAIN_GEN1, _BRAIN_GEN2 = _load_brain_age_slopes()
+    if pub_metric != "wMAE_test":
+        st.info("This figure is only available for the wMAE metric.")
+    else:
+        _brain_slope_df, _BRAIN_GEN1, _BRAIN_GEN2 = _load_brain_age_slopes()
 
-    _brain_gen_labels = [
-        {"label": "1st Gen",  "models": _BRAIN_GEN1, "color": "#2171b5"},
-        {"label": "Next Gen", "models": _BRAIN_GEN2, "color": "#08306b"},
-    ]
+        _brain_gen_labels = [
+            {"label": "1st Gen",  "models": _BRAIN_GEN1, "color": "#2171b5"},
+            {"label": "Next Gen", "models": _BRAIN_GEN2, "color": "#08306b"},
+        ]
 
-    fig_3d = age_slope_plot_plotly(
-        plot_df=_brain_slope_df,
-        x_label="Change in wMAE per 1-year increase in mean age",
-        title="Brain age model performance stability over development",
-        model_palette=BRAIN_MODEL_PALETTE,
-        gen_labels=_brain_gen_labels,
-        font_size=14,
-        x_range=[-0.15, 0.2],
-    )
-    _col3d, _ = st.columns([2, 1])
-    with _col3d:
-        st.plotly_chart(fig_3d, use_container_width=True)
+        fig_3d = age_slope_plot_plotly(
+            plot_df=_brain_slope_df,
+            x_label="Change in wMAE per 1-year increase in mean age",
+            title="Brain age model performance stability over development",
+            model_palette=BRAIN_MODEL_PALETTE,
+            gen_labels=_brain_gen_labels,
+            font_size=14,
+            x_range=[-0.15, 0.2],
+        )
+        _col3d, _ = st.columns([2, 1])
+        with _col3d:
+            st.plotly_chart(fig_3d, use_container_width=True)
