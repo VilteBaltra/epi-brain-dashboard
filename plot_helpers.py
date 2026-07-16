@@ -816,17 +816,23 @@ def violin_plot_plotly(
     k_y  = y_data_min - y_span * 0.06
     y_min = y_data_min - y_span * 0.15
 
-    cnt_map = {}
-    if counts is not None:
-        cnt_map = dict(zip(counts["age_bin"].astype(str), counts["label"]))
     cohort_col = "cohort" if "cohort" in df.columns else None
 
     for b, xi in x_map.items():
-        lbl = cnt_map.get(str(b))
-        if not lbl:
-            continue
+        bin_df = df.loc[df["age_bin"] == b]
         if cohort_col:
-            bin_df = df.loc[df["age_bin"] == b].dropna(subset=[cohort_col])
+            bin_df = bin_df.dropna(subset=[cohort_col])
+        if bin_df.empty:
+            continue
+        # Compute k directly from data to avoid Categorical/StringDtype issues on Cloud
+        if cohort_col and "timepoint" in bin_df.columns:
+            _k = int(bin_df[["cohort", "timepoint"]].drop_duplicates().shape[0])
+        elif cohort_col:
+            _k = int(bin_df[cohort_col].nunique())
+        else:
+            _k = len(bin_df)
+        lbl = f"k={_k}"
+        if cohort_col:
             if "timepoint" in bin_df.columns:
                 ct_counts = (
                     bin_df.groupby(cohort_col, observed=True)["timepoint"]
