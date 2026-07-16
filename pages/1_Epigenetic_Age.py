@@ -8,6 +8,7 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 
+from ui_helpers import render_sidebar_logo, render_footer
 from plot_helpers import (
     COHORT_PALETTE, EPI_MODEL_PALETTE, RENAME,
     BIN7_LEVELS, _bin7, GEN1, GEN1_GEST, GEN2_4,
@@ -17,6 +18,18 @@ from plot_helpers import (
 )
 
 st.set_page_config(page_title="Epigenetic Clock Performance", layout="wide")
+
+st.markdown("""
+<style>
+[data-testid="stSidebar"] button {
+    font-size: 12px !important;
+    padding: 2px 8px !important;
+    height: 26px !important;
+    min-height: 0 !important;
+    line-height: 1 !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 st.markdown("""
 <style>
@@ -53,28 +66,50 @@ ct = load_ct()
 
 st.title("Epigenetic Clock Performance")
 
+render_sidebar_logo()
 st.sidebar.header("Filters")
 
-cohort_f = st.sidebar.multiselect(
-    "Cohort",
-    df["cohort"].dropna().unique(),
-    df["cohort"].dropna().unique()
-)
-
+_all_cohorts = list(df["cohort"].dropna().unique())
 _bin_display = [b.replace("\n", " ") for b in BIN7_LEVELS]
 _display_to_bin = dict(zip(_bin_display, BIN7_LEVELS))
-age_group_display_f = st.sidebar.multiselect(
-    "Age group",
-    _bin_display,
-    _bin_display,
-)
+_all_models  = list(df["model"].dropna().unique())
+
+if "epi_cohort" not in st.session_state:
+    st.session_state["epi_cohort"] = _all_cohorts
+if "epi_age" not in st.session_state:
+    st.session_state["epi_age"]    = _bin_display
+if "epi_model" not in st.session_state:
+    st.session_state["epi_model"]  = _all_models
+
+if st.sidebar.button("↺ Reset filters"):
+    st.session_state["epi_cohort"] = _all_cohorts
+    st.session_state["epi_age"]    = _bin_display
+    st.session_state["epi_model"]  = _all_models
+
+st.sidebar.markdown("**Cohort**")
+_c1, _c2 = st.sidebar.columns(2)
+if _c1.button("Select all", key="epi_cohort_all"):
+    st.session_state["epi_cohort"] = _all_cohorts
+if _c2.button("Clear", key="epi_cohort_clear"):
+    st.session_state["epi_cohort"] = []
+cohort_f = st.sidebar.multiselect("Cohort", _all_cohorts, key="epi_cohort", label_visibility="collapsed")
+
+st.sidebar.markdown("**Age group**")
+_a1, _a2 = st.sidebar.columns(2)
+if _a1.button("Select all", key="epi_age_all"):
+    st.session_state["epi_age"] = _bin_display
+if _a2.button("Clear", key="epi_age_clear"):
+    st.session_state["epi_age"] = []
+age_group_display_f = st.sidebar.multiselect("Age group", _bin_display, key="epi_age", label_visibility="collapsed")
 age_group_f = [_display_to_bin[d] for d in age_group_display_f]
 
-model_f = st.sidebar.multiselect(
-    "Model",
-    df["model"].dropna().unique(),
-    df["model"].dropna().unique()
-)
+st.sidebar.markdown("**Model**")
+_m1, _m2 = st.sidebar.columns(2)
+if _m1.button("Select all", key="epi_model_all"):
+    st.session_state["epi_model"] = _all_models
+if _m2.button("Clear", key="epi_model_clear"):
+    st.session_state["epi_model"] = []
+model_f = st.sidebar.multiselect("Model", _all_models, key="epi_model", label_visibility="collapsed")
 
 filtered = df[
     (df["cohort"].isin(cohort_f)) &
@@ -400,12 +435,18 @@ with st.spinner("Computing meta-analyses…"):
      meta_epi_wmae, meta_epi_mae, meta_epi_pearson, meta_epi_r2,
      epi_counts) = _compute_epi_pub_data(filtered)
 
-# Hybrid: use R estimates (incl. Pooled) for forest plots when no filters applied
-if len(filtered) == len(df):
-    _r_wmae, _r_pearson = _load_r_epi_meta()
-    if _r_wmae is not None:
-        epi_wmae_mw    = _r_wmae
-        epi_pearson_mw = _r_pearson
+# Store DL versions before any override
+epi_wmae_mw_dl    = epi_wmae_mw
+epi_pearson_mw_dl = epi_pearson_mw
+
+# Always load R estimates (used for KPI metrics + toggle in Fig 2A)
+_r_wmae, _r_pearson = _load_r_epi_meta()
+_r_available = _r_wmae is not None
+
+# For KPI metrics: use R when unfiltered (matches paper values)
+if len(filtered) == len(df) and _r_available:
+    epi_wmae_mw    = _r_wmae
+    epi_pearson_mw = _r_pearson
 
 # Fill top metrics with model-level pooled estimates
 _pooled_mae  = epi_mae_mw.loc[epi_mae_mw["model"] == "Pooled", "pooled_val"].iloc[0]
@@ -426,12 +467,26 @@ pub_metric = _pub_col2.selectbox(
 
 tab_2a, tab_2c, tab_2d = st.tabs([
     "Fig 2A/B — Forest plot",
-    "Fig 2C — Weighted MAE by age",
+    "Fig 2C — Performance by age group",
     "Fig 2D — Performance stability over development",
 ])
 
 # ── Fig 2A / 2B (metric-switchable forest plot) ───────────────────────────────
 with tab_2a:
+    # Toggle: REML (R, paper) vs DL (Python, filter-consistent)
+    _tog_col, _ = st.columns([3, 2])
+    _use_dl = _tog_col.toggle(
+        "DerSimonian-Laird estimates",
+        value=False,
+        key="toggle_2a_dl",
+        help=(
+            "Off: REML multilevel estimates (rma.mv, R package) — matches paper figures. "
+            "On: DerSimonian-Laird estimates — consistent with sidebar filters."
+        ),
+    )
+    _forest_wmae    = epi_wmae_mw_dl    if _use_dl else epi_wmae_mw
+    _forest_pearson = epi_pearson_mw_dl if _use_dl else epi_pearson_mw
+
     _A_NEXTGEN = ["DamAge", "AdaptAge", "PCGrimAge", "PhenoAge"]
     _A_GEN1    = ["CorticalClock", "PCBrainAge", "Hannum", "ZhangEN", "ZhangBLUP",
                   "Wu", "AltumAge", "cAge", "skinHorvath", "PedBE", "Horvath2013"]
@@ -446,7 +501,7 @@ with tab_2a:
         order_2a = ["Pooled"] + _A_NEXTGEN + _A_GEN1 + _A_GEST
         fig_2ab = forest_plot_plotly(
             raw_df=epi_sub,
-            meta_df=epi_wmae_mw,
+            meta_df=_forest_wmae,
             model_order=order_2a,
             x_col="wMAE_test",
             title="Epigenetic clock performance (weighted MAE)",
@@ -523,7 +578,7 @@ with tab_2a:
         div_ep3  = 0.5 + len(_P_NEXT_GEN) + len(_P_GEN1)
         fig_2ab = forest_plot_plotly(
             raw_df=epi_pearson_df,
-            meta_df=epi_pearson_mw,
+            meta_df=_forest_pearson,
             model_order=order_2b,
             x_col="Pearson",
             title="Epigenetic clock performance (Pearson r)",
@@ -540,7 +595,7 @@ with tab_2a:
             marker_size=8,
             row_height=32,
         )
-    st.caption("Each row shows individual cohort estimates (coloured dots) and the pooled meta-analytic estimate (diamond with CI). Models are grouped by generation (Gest / 1st Gen / Next Gen).")
+    st.caption("Each row shows individual cohort estimates per timepoint (coloured dots) and the pooled meta-analytic estimate (diamond with CI). Models are grouped by generation (Gestational / 1st Gen / Next Gen).")
     if pub_metric in ("wMAE_test", "MAE"):
         _log = st.checkbox("Log scale", key="log_2a", value=False)
         if _log:
@@ -552,10 +607,10 @@ with tab_2a:
             # Apply log scale only to the data axis (xaxis2), not the gen-label left panel (xaxis)
             fig_2ab.update_layout(xaxis2=dict(type="log", autorange=True))
     st.plotly_chart(fig_2ab, use_container_width=True)
-    if len(filtered) == len(df):
-        st.caption("Pooled estimates from multilevel random-effects meta-analysis (rma.mv, REML; metafor R package).")
+    if _use_dl:
+        st.caption("Pooled estimates from DerSimonian-Laird random-effects meta-analysis — consistent with sidebar filters.")
     else:
-        st.caption("Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate; applied to filtered subset).")
+        st.caption("Pooled estimates from multilevel random-effects meta-analysis (rma.mv, REML; metafor R package) — matches paper figures.")
 
 # ── Fig 2C ────────────────────────────────────────────────────────────────────
 with tab_2c:
@@ -655,3 +710,5 @@ with tab_2d:
         _col2d, _ = st.columns([2, 1])
         with _col2d:
             st.plotly_chart(fig_2d, use_container_width=True)
+
+render_footer()

@@ -9,6 +9,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+from ui_helpers import render_sidebar_logo, render_footer
 from plot_helpers import (
     COHORT_PALETTE, KELLY_COLORS,
     BRAIN_BIN5_LEVELS, _bin_brain5,
@@ -21,6 +22,13 @@ st.set_page_config(page_title="Brain–Epi Associations", layout="wide")
 st.markdown("""
 <style>
 [data-testid="stMetricValue"] { font-size: 1.6rem; }
+[data-testid="stSidebar"] button {
+    font-size: 12px !important;
+    padding: 2px 8px !important;
+    height: 26px !important;
+    min-height: 0 !important;
+    line-height: 1 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -53,33 +61,62 @@ ct = load_ct()
 st.title("Brain–Epigenetic Age Associations")
 
 # ── Sidebar filters ────────────────────────────────────────────────────────────
+render_sidebar_logo()
 st.sidebar.header("Filters")
 
-cohort_f = st.sidebar.multiselect(
-    "Cohort",
-    df["cohort"].dropna().unique(),
-    df["cohort"].dropna().unique(),
-)
+_all_cohorts      = list(df["cohort"].dropna().unique())
+_bin_display      = [b.replace("\n", " ") for b in BRAIN_BIN5_LEVELS]
+_display_to_bin   = dict(zip(_bin_display, BRAIN_BIN5_LEVELS))
+_all_brain_models = sorted(df["brain_model"].dropna().unique())
+_all_epi_models   = sorted(df["epi_model"].dropna().unique())
 
-_bin_display = [b.replace("\n", " ") for b in BRAIN_BIN5_LEVELS]
-_display_to_bin = dict(zip(_bin_display, BRAIN_BIN5_LEVELS))
-age_group_display_f = st.sidebar.multiselect(
-    "Age group",
-    _bin_display,
-    _bin_display,
-)
+if "assoc_cohort" not in st.session_state:
+    st.session_state["assoc_cohort"]      = _all_cohorts
+if "assoc_age" not in st.session_state:
+    st.session_state["assoc_age"]         = _bin_display
+if "assoc_brain_model" not in st.session_state:
+    st.session_state["assoc_brain_model"] = _all_brain_models
+if "assoc_epi_model" not in st.session_state:
+    st.session_state["assoc_epi_model"]   = _all_epi_models
+
+if st.sidebar.button("↺ Reset filters"):
+    st.session_state["assoc_cohort"]      = _all_cohorts
+    st.session_state["assoc_age"]         = _bin_display
+    st.session_state["assoc_brain_model"] = _all_brain_models
+    st.session_state["assoc_epi_model"]   = _all_epi_models
+
+st.sidebar.markdown("**Cohort**")
+_c1, _c2 = st.sidebar.columns(2)
+if _c1.button("Select all", key="assoc_cohort_all"):
+    st.session_state["assoc_cohort"] = _all_cohorts
+if _c2.button("Clear", key="assoc_cohort_clear"):
+    st.session_state["assoc_cohort"] = []
+cohort_f = st.sidebar.multiselect("Cohort", _all_cohorts, key="assoc_cohort", label_visibility="collapsed")
+
+st.sidebar.markdown("**Age group**")
+_a1, _a2 = st.sidebar.columns(2)
+if _a1.button("Select all", key="assoc_age_all"):
+    st.session_state["assoc_age"] = _bin_display
+if _a2.button("Clear", key="assoc_age_clear"):
+    st.session_state["assoc_age"] = []
+age_group_display_f = st.sidebar.multiselect("Age group", _bin_display, key="assoc_age", label_visibility="collapsed")
 age_group_f = [_display_to_bin[d] for d in age_group_display_f]
 
-brain_model_f = st.sidebar.multiselect(
-    "Brain Model",
-    sorted(df["brain_model"].dropna().unique()),
-    sorted(df["brain_model"].dropna().unique()),
-)
-epi_model_f = st.sidebar.multiselect(
-    "Epi Model",
-    sorted(df["epi_model"].dropna().unique()),
-    sorted(df["epi_model"].dropna().unique()),
-)
+st.sidebar.markdown("**Brain model**")
+_b1, _b2 = st.sidebar.columns(2)
+if _b1.button("Select all", key="assoc_brain_all"):
+    st.session_state["assoc_brain_model"] = _all_brain_models
+if _b2.button("Clear", key="assoc_brain_clear"):
+    st.session_state["assoc_brain_model"] = []
+brain_model_f = st.sidebar.multiselect("Brain Model", _all_brain_models, key="assoc_brain_model", label_visibility="collapsed")
+
+st.sidebar.markdown("**Epi model**")
+_e1, _e2 = st.sidebar.columns(2)
+if _e1.button("Select all", key="assoc_epi_all"):
+    st.session_state["assoc_epi_model"] = _all_epi_models
+if _e2.button("Clear", key="assoc_epi_clear"):
+    st.session_state["assoc_epi_model"] = []
+epi_model_f = st.sidebar.multiselect("Epi Model", _all_epi_models, key="assoc_epi_model", label_visibility="collapsed")
 
 filtered = df[
     (df["cohort"].isin(cohort_f)) &
@@ -899,3 +936,5 @@ with tab_4c:
     )
 
     st.plotly_chart(fig_4c, use_container_width=True)
+
+render_footer()

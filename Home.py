@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from pathlib import Path
+from ui_helpers import render_sidebar_logo, render_footer
 
 st.set_page_config(page_title="Epigenetic & Brain Age Dashboard — MIND Consortium", layout="wide")
 
@@ -13,12 +15,18 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── TITLE ─────────────────────────────────────────────────────────────────────
+render_sidebar_logo()
 st.title("Epigenetic & Brain Age Dashboard — MIND Consortium")
 st.markdown(
     "Exploring how epigenetic and brain age models perform across development "
     "(birth–24 years), using data from 15 cohorts "
     "(20,917 epigenetic and 19,925 brain age samples including repeated measures). "
     "Navigate the pages in the sidebar to explore model performance interactively."
+)
+st.markdown(
+    "🔗 [MIND Consortium](https://www.erasmusmc.nl/en/research/groups/methylation-imaging-and-neurodevelopment-mind-consortium) &nbsp;·&nbsp; "
+    "📄 [Consortium profile paper](https://www.nature.com/articles/s41380-025-03203-w)",
+    unsafe_allow_html=True,
 )
 st.info("💡 Use the sidebar filters (cohort, age group, model) to interactively update all figures across pages.", icon=None)
 
@@ -174,3 +182,18 @@ f1, f2, f3 = st.columns(3)
 f1.info("Epigenetic clock accuracy (and to a lesser extent brain age model accuracy) improves with age.")
 f2.info("Biological age models work best when they are built for the age group (and tissue) they are used on.")
 f3.info("Weak cross-sectional association between brain and epigenetic age estimates across development.")
+
+with st.expander("Acknowledgements", expanded=False):
+    st.markdown("""
+**Dashboard development:** Vilte Baltramonaityte with AI-assisted development (Claude, Anthropic).
+
+**Scientific analysis & content:** Marlene Staginnus.
+
+**Scientific oversight:** Esther Walton.
+
+**Data contributions:** ALSPAC, BHRC, CannTeen, DCHS, FFCWS, FinnBrain, GenR, GUSTO, K2H, MTwiNS, NICAP, Oregon ADHD-1000, TAG, UCI Cohort.
+
+**Funding:** M. Staginnus, V. Baltramonaityte, and E. Walton are supported by UK Research and Innovation (UKRI) under the UK government's Horizon Europe / ERC Frontier Research Guarantee [BrainHealth, grant number EP/Y015037/1, awarded to E. Walton].
+    """)
+
+render_footer()

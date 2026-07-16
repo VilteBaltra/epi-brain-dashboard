@@ -12,6 +12,7 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 
+from ui_helpers import render_sidebar_logo, render_footer
 from plot_helpers import (
     COHORT_PALETTE, BRAIN_MODEL_PALETTE,
     BRAIN_BIN5_LEVELS, _bin_brain5, BRAIN_GEN_BRAINAGE, BRAIN_GEN_NEXTGEN,
@@ -25,6 +26,13 @@ st.set_page_config(page_title="Brain Age Model Performance", layout="wide")
 st.markdown("""
 <style>
 [data-testid="stMetricValue"] { font-size: 1.6rem; }
+[data-testid="stSidebar"] button {
+    font-size: 12px !important;
+    padding: 2px 8px !important;
+    height: 26px !important;
+    min-height: 0 !important;
+    line-height: 1 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -62,28 +70,50 @@ st.title("Brain Age Model Performance")
 # -------------------------
 # SIDEBAR FILTERS
 # -------------------------
+render_sidebar_logo()
 st.sidebar.header("Filters")
 
-cohort_f = st.sidebar.multiselect(
-    "Cohort",
-    df["cohort"].dropna().unique(),
-    df["cohort"].dropna().unique()
-)
-
+_all_cohorts = list(df["cohort"].dropna().unique())
 _bin_display = [b.replace("\n", " ") for b in BRAIN_BIN5_LEVELS]
 _display_to_bin = dict(zip(_bin_display, BRAIN_BIN5_LEVELS))
-age_group_display_f = st.sidebar.multiselect(
-    "Age group",
-    _bin_display,
-    _bin_display,
-)
+_all_models  = list(df["model"].dropna().unique())
+
+if "brain_cohort" not in st.session_state:
+    st.session_state["brain_cohort"] = _all_cohorts
+if "brain_age" not in st.session_state:
+    st.session_state["brain_age"]    = _bin_display
+if "brain_model" not in st.session_state:
+    st.session_state["brain_model"]  = _all_models
+
+if st.sidebar.button("↺ Reset filters"):
+    st.session_state["brain_cohort"] = _all_cohorts
+    st.session_state["brain_age"]    = _bin_display
+    st.session_state["brain_model"]  = _all_models
+
+st.sidebar.markdown("**Cohort**")
+_c1, _c2 = st.sidebar.columns(2)
+if _c1.button("Select all", key="brain_cohort_all"):
+    st.session_state["brain_cohort"] = _all_cohorts
+if _c2.button("Clear", key="brain_cohort_clear"):
+    st.session_state["brain_cohort"] = []
+cohort_f = st.sidebar.multiselect("Cohort", _all_cohorts, key="brain_cohort", label_visibility="collapsed")
+
+st.sidebar.markdown("**Age group**")
+_a1, _a2 = st.sidebar.columns(2)
+if _a1.button("Select all", key="brain_age_all"):
+    st.session_state["brain_age"] = _bin_display
+if _a2.button("Clear", key="brain_age_clear"):
+    st.session_state["brain_age"] = []
+age_group_display_f = st.sidebar.multiselect("Age group", _bin_display, key="brain_age", label_visibility="collapsed")
 age_group_f = [_display_to_bin[d] for d in age_group_display_f]
 
-model_f = st.sidebar.multiselect(
-    "Model",
-    df["model"].dropna().unique(),
-    df["model"].dropna().unique()
-)
+st.sidebar.markdown("**Model**")
+_m1, _m2 = st.sidebar.columns(2)
+if _m1.button("Select all", key="brain_model_all"):
+    st.session_state["brain_model"] = _all_models
+if _m2.button("Clear", key="brain_model_clear"):
+    st.session_state["brain_model"] = []
+model_f = st.sidebar.multiselect("Model", _all_models, key="brain_model", label_visibility="collapsed")
 
 # -------------------------
 # FILTER DATA
@@ -570,7 +600,7 @@ pub_metric = _pub_col2.selectbox(
 
 tab_3a, tab_3c, tab_3d = st.tabs([
     "Fig 3A/B — Forest plot",
-    "Fig 3C — Weighted MAE by age",
+    "Fig 3C — Performance by age group",
     "Fig 3D — Performance stability over development",
 ])
 
@@ -664,7 +694,7 @@ with tab_3a:
             marker_size=8,
             row_height=50,
         )
-    st.caption("Each row shows individual cohort estimates (coloured dots) and the pooled meta-analytic estimate (diamond with CI). Models are grouped by generation (1st Gen / Next Gen).")
+    st.caption("Each row shows individual cohort estimates per timepoint (coloured dots) and the pooled meta-analytic estimate (diamond with CI).")
     if pub_metric in ("wMAE_test", "MAE"):
         _log = st.checkbox("Log scale", key="log_3a", value=False)
         if _log:
@@ -778,3 +808,5 @@ with tab_3d:
         _col3d, _ = st.columns([2, 1])
         with _col3d:
             st.plotly_chart(fig_3d, use_container_width=True)
+
+render_footer()
