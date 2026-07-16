@@ -772,6 +772,7 @@ with tab_3d:
             model_palette=BRAIN_MODEL_PALETTE,
             gen_labels=_brain_gen_labels,
             font_size=14,
+            row_height=58,
             x_range=[-0.15, 0.2],
         )
         _col3d, _ = st.columns([2, 1])
