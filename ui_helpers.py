@@ -22,8 +22,7 @@ _FOOTER_HTML = """
     <a href="https://www.erasmusmc.nl/en/research/groups/methylation-imaging-and-neurodevelopment-mind-consortium"
        style="color: #999;">erasmusmc.nl/MIND</a>
     <br>
-    Data shared for research purposes only. Contact the consortium before reuse.
-    &nbsp;·&nbsp; © 2025 MIND Consortium
+    Data shared for research purposes only. &nbsp;·&nbsp; © 2025 MIND Consortium
 </div>
 """
 
