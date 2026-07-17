@@ -15,7 +15,7 @@ _FOOTER_HTML = """
     Findings from the MIND Consortium. <i>In preparation.</i>
     <br>
     <b style="color: #777;">MIND Consortium:</b>
-    Schuurmans et al., <i>Molecular Psychiatry</i> (2025) —
+    Schuurmans et al. (2025), <i>Molecular Psychiatry</i> —
     <a href="https://www.nature.com/articles/s41380-025-03203-w"
        style="color: #999;">doi:10.1038/s41380-025-03203-w</a>
     &nbsp;·&nbsp;
