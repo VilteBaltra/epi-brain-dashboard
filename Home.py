@@ -34,7 +34,7 @@ st.markdown(
     "A **[model database](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html)** "
     "is also available as a static searchable table — listing all 20 epigenetic clocks and 8 brain age models "
     "with tissue, array, training age range, generation, ML method, meta-analytic wMAE and Pearson r (with 95% CIs), "
-    "and all brain–epigenetic age association results. Filterable and sortable, no app required.",
+    "and all brain–epigenetic age association results.",
     unsafe_allow_html=True,
 )
 
