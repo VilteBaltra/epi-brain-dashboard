@@ -4,7 +4,7 @@ import plotly.express as px
 from pathlib import Path
 from ui_helpers import render_sidebar_logo, render_footer
 
-st.set_page_config(page_title="Epigenetic & Brain Age Dashboard — MIND Consortium", layout="wide")
+st.set_page_config(page_title="Epigenetic & Brain Age Dashboard", layout="wide")
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -16,27 +16,22 @@ st.markdown("""
 
 # ── TITLE ─────────────────────────────────────────────────────────────────────
 render_sidebar_logo()
-st.title("Epigenetic & Brain Age Dashboard — MIND Consortium")
+st.title("Epigenetic & Brain Age Dashboard")
 st.markdown(
     "Exploring how epigenetic and brain age models perform across development "
-    "(birth–24 years), using data from 15 cohorts "
+    "(birth–24 years), using data from 15 cohorts of the "
+    "[**MIND Consortium**](https://www.erasmusmc.nl/en/research/groups/methylation-imaging-and-neurodevelopment-mind-consortium) "
     "(20,917 epigenetic and 19,925 brain age samples including repeated measures). "
-    "Navigate the pages in the sidebar to explore model performance interactively."
+    "Navigate the pages in the sidebar to explore model performance interactively, "
+    "or browse the [**model database**](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html) "
+    "for a static summary of all models and association results.",
+    unsafe_allow_html=True,
 )
 st.markdown(
-    "🔗 [MIND Consortium](https://www.erasmusmc.nl/en/research/groups/methylation-imaging-and-neurodevelopment-mind-consortium) &nbsp;·&nbsp; "
     "📄 [Consortium profile paper](https://www.nature.com/articles/s41380-025-03203-w)",
     unsafe_allow_html=True,
 )
-st.info("💡 Use the sidebar filters (cohort, age group, model) to interactively update all figures across pages.", icon=None)
-
-st.markdown(
-    "A **[model database](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html)** "
-    "is also available as a static searchable table — listing all 20 epigenetic clocks and 8 brain age models "
-    "with tissue, array, training age range, generation, ML method, meta-analytic wMAE and Pearson r (with 95% CIs), "
-    "and all brain–epigenetic age association results.",
-    unsafe_allow_html=True,
-)
+st.caption("Use the sidebar filters (cohort, age group, model) to update all figures across pages.")
 
 st.divider()
 
