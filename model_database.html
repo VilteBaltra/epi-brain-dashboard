@@ -105,14 +105,23 @@
     .na { color: var(--light); font-style: italic; }
 
     /* Beta bar (centered, for associations) */
-    .beta-cell { display: flex; align-items: center; gap: 6px; }
-    .beta-track { width: 100px; height: 6px; background: var(--border); border-radius: 3px; position: relative; flex-shrink: 0; }
-    .beta-bar { position: absolute; top: 0; height: 6px; border-radius: 3px; }
+    .beta-cell { display: flex; align-items: center; gap: 8px; }
+    .beta-track { width: 120px; height: 8px; background: var(--border); border-radius: 4px; position: relative; flex-shrink: 0; }
+    .beta-bar { position: absolute; top: 0; height: 8px; border-radius: 4px; min-width: 2px; }
     .beta-bar.pos { background: var(--sage); left: 50%; }
     .beta-bar.neg { background: #c0392b; right: 50%; }
     .beta-val { font-variant-numeric: tabular-nums; font-size: 12.5px; white-space: nowrap; }
 
     .sig-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 3px; background: #e8f5e1; color: #2e6b1a; margin-left: 4px; }
+    .pfdr-sig { color: #2e6b1a; font-weight: 600; }
+    .pfdr-trend { color: var(--amber); }
+
+    /* FDR pill toggle */
+    .sig-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; padding: 6px 12px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--white); font-size: 12.5px; color: var(--muted); font-weight: 500; transition: all .15s; user-select: none; margin-left: 6px; }
+    .sig-toggle:hover { border-color: var(--sage-mid); color: var(--sage); }
+    .sig-toggle.active { border-color: var(--sage); background: var(--sage-light); color: var(--sage); }
+    .sig-toggle .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sage-mid); flex-shrink: 0; }
+    .sig-toggle.active .dot { background: var(--sage); }
 
     .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 14px; }
     .count { font-size: 12px; color: var(--muted); }
@@ -191,9 +200,10 @@
       <option>PhenoAge</option><option>skinHorvath</option><option>Wu</option>
       <option>ZhangBLUP</option><option>ZhangEN</option>
     </select>
-    <label class="sig-filter" style="margin-left:10px">
-      <input type="checkbox" id="filter-sig" onchange="applyFilters()"> FDR significant only
-    </label>
+    <span class="sig-toggle" id="sig-toggle" onclick="toggleSig()">
+      <span class="dot"></span> FDR significant only
+    </span>
+    <input type="checkbox" id="filter-sig" style="display:none" onchange="applyFilters()">
   </span>
 
   <button class="btn-reset" onclick="resetFilters()">Reset</button>
@@ -449,7 +459,7 @@ function perfCell(val, lb, ub, bar, maxV) {
 }
 function betaCell(beta, lb, ub) {
   if (beta === null || beta === undefined) return '<span class="na">—</span>';
-  const MAX = 0.08;
+  const MAX = 0.04; // tighter scale so typical values fill more of the bar
   const pct = Math.min(1, Math.abs(beta) / MAX) * 50;
   const cls = beta >= 0 ? 'pos' : 'neg';
   const ci = (lb !== null && ub !== null) ? `<span class="ci">[${lb.toFixed(4)}, ${ub.toFixed(4)}]</span>` : '';
@@ -458,11 +468,27 @@ function betaCell(beta, lb, ub) {
     <div><span class="beta-val">${beta >= 0 ? '+' : ''}${beta.toFixed(4)}</span>${ci}</div>
   </div>`;
 }
-function pCell(p, pFDR) {
-  if (!p) return '<span class="na">—</span>';
-  const sigBadge = (pFDR && (pFDR.startsWith('<') || parseFloat('0'+pFDR) < 0.05))
-    ? '<span class="sig-badge">FDR*</span>' : '';
-  return p + sigBadge;
+function isSigP(p) {
+  if (!p) return false;
+  const s = String(p).trim();
+  if (s.startsWith('<')) return true;
+  try { return parseFloat(s.startsWith('.') ? '0'+s : s) < 0.05; } catch { return false; }
+}
+function pCell(pFDR) {
+  if (!pFDR) return '<span class="na">—</span>';
+  if (isSigP(pFDR)) return `<span class="pfdr-sig">${pFDR}</span>`;
+  try {
+    const v = parseFloat(String(pFDR).startsWith('.') ? '0'+pFDR : pFDR);
+    if (v < 0.10) return `<span class="pfdr-trend">${pFDR}</span>`;
+  } catch {}
+  return pFDR;
+}
+function toggleSig() {
+  const cb = document.getElementById('filter-sig');
+  const tog = document.getElementById('sig-toggle');
+  cb.checked = !cb.checked;
+  tog.classList.toggle('active', cb.checked);
+  applyFilters();
 }
 
 // ── Table head ───────────────────────────────────────────────────────────────
@@ -509,8 +535,8 @@ function renderRows(rows) {
       <td style="color:var(--ink)">${r.epi}</td>
       <td style="color:var(--muted)">${r.k}</td>
       <td>${betaCell(r.beta, r.ci_lb, r.ci_ub)}</td>
-      <td style="font-variant-numeric:tabular-nums">${r.p||'—'}</td>
-      <td style="font-variant-numeric:tabular-nums">${pCell(r.pFDR, r.pFDR)}</td>
+      <td style="font-variant-numeric:tabular-nums">${isSigP(r.p) ? '<span class="pfdr-sig">'+r.p+'</span>' : (r.p||'—')}</td>
+      <td style="font-variant-numeric:tabular-nums">${pCell(r.pFDR)}</td>
       <td style="font-variant-numeric:tabular-nums;color:var(--muted)">${r.age_b !== null && r.age_b !== undefined ? (r.age_b >= 0 ? '+' : '') + r.age_b.toFixed(4) : '—'}</td>
       <td style="font-variant-numeric:tabular-nums;color:var(--muted)">${r.age_p||'—'}</td>
     </tr>`).join('');
