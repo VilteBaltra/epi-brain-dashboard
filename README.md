@@ -15,8 +15,7 @@ Interactive dashboard accompanying the paper:
 
 This dashboard allows interactive exploration of epigenetic and brain age model performance and their associations across development (birth–24 years), based on data from 15 cohorts and over 21,000 samples from the MIND Consortium.
 
-A **lightweight, static model database** is also available for researchers who want to quickly identify models appropriate for developmental studies without running the full Streamlit app:
-👉 [Model database (searchable HTML)](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html)
+Browse the [model database](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html) for a static summary of all models and association results.
 
 **Pages:**
 
