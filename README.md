@@ -7,7 +7,7 @@ Interactive dashboard accompanying the paper:
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://epi-brain-age-dashboard.streamlit.app/)
 &nbsp;&nbsp;
-[![Model database](https://img.shields.io/badge/Model_database-static_HTML-6b7c5e?style=flat)](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html)
+[![Model database](https://img.shields.io/badge/Model_database-Browse_models-8967C8?style=flat&logoColor=white)](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html)
 
 ---
 
