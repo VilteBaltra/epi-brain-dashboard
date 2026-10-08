@@ -7,24 +7,24 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --ink:    #28261f;
-      --text:   #4a4740;
-      --muted:  #7a776e;
-      --light:  #a8a59c;
-      --border: #e8e4dc;
-      --bg:     #faf9f6;
-      --card:   #f5f2ec;
+      --ink:    #1a1a2e;
+      --text:   #2d2d45;
+      --muted:  #6b6b8a;
+      --light:  #a0a0b8;
+      --border: #dde3ec;
+      --bg:     #ffffff;
+      --card:   #f0f4f8;
       --white:  #ffffff;
-      --sage:       #6b7c5e;
-      --sage-light: #f0f2ec;
-      --sage-mid:   #c8d0be;
+      --primary:       #8967C8;
+      --primary-light: #f3f0fa;
+      --primary-mid:   #c5b3e8;
       --amber:      #92600a;
       --amber-light:#fdf3e0;
       --rose:       #9b1a1a;
       --rose-light: #fef2f2;
     }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; color: var(--text); background: var(--bg); line-height: 1.5; }
-    a { color: var(--sage); text-decoration: none; }
+    a { color: var(--primary); text-decoration: none; }
 
     header { background: var(--white); border-bottom: 1px solid var(--border); padding: 1.25rem 2rem; }
     .header-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
@@ -37,12 +37,12 @@
       padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px;
       font-size: 13px; color: var(--text); background: var(--white); outline: none;
     }
-    input[type=text]:focus { border-color: var(--sage-mid); }
+    input[type=text]:focus { border-color: var(--primary-mid); }
     select {
       padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
       font-size: 13px; color: var(--text); background: var(--white); outline: none; cursor: pointer;
     }
-    select:focus { border-color: var(--sage-mid); }
+    select:focus { border-color: var(--primary-mid); }
     .age-filter { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
     .age-filter input[type=number] {
       width: 64px; padding: 7px 8px; border: 1px solid var(--border); border-radius: 6px;
@@ -52,7 +52,7 @@
       padding: 7px 14px; border: 1px solid var(--border); border-radius: 6px;
       font-size: 13px; color: var(--muted); background: var(--white); cursor: pointer;
     }
-    .btn-reset:hover { border-color: var(--sage-mid); color: var(--sage); }
+    .btn-reset:hover { border-color: var(--primary-mid); color: var(--primary); }
     label.sig-filter { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 5px; cursor: pointer; }
 
     .tabs { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; gap: 0; border-bottom: 1px solid var(--border); }
@@ -60,7 +60,7 @@
       padding: 10px 22px; font-size: 13px; font-weight: 500; color: var(--muted);
       border-bottom: 2px solid transparent; cursor: pointer; margin-bottom: -1px; white-space: nowrap;
     }
-    .tab.active { color: var(--sage); border-bottom-color: var(--sage); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
     .tab:hover { color: var(--ink); }
 
     .table-wrap { max-width: 1200px; margin: 1rem auto 2rem; padding: 0 2rem; overflow-x: auto; }
@@ -73,12 +73,12 @@
     }
     thead th:hover { color: var(--ink); }
     thead th .sort-icon { margin-left: 4px; opacity: 0.4; font-size: 10px; }
-    thead th.sorted .sort-icon { opacity: 1; color: var(--sage); }
+    thead th.sorted .sort-icon { opacity: 1; color: var(--primary); }
     tbody tr { border-bottom: 1px solid var(--border); }
     tbody tr:last-child { border-bottom: none; }
     tbody tr:hover { background: var(--card); }
-    tbody tr.sig-row { background: #f6faf4; }
-    tbody tr.sig-row:hover { background: #edf5e9; }
+    tbody tr.sig-row { background: #f5f2fd; }
+    tbody tr.sig-row:hover { background: #ece6f9; }
     tbody td { padding: 9px 12px; color: var(--text); vertical-align: middle; }
     td.model-name { font-weight: 500; color: var(--ink); }
     .ci { font-size: 11px; color: var(--light); display: block; margin-top: 1px; }
@@ -89,18 +89,18 @@
       background: var(--card); color: var(--muted);
     }
     .badge.tissue-blood  { background: #fef2f2; color: #9b1a1a; border-color: #fecaca; }
-    .badge.tissue-cortex { background: #f0f2ec; color: #3a5c2a; border-color: var(--sage-mid); }
+    .badge.tissue-cortex { background: var(--primary-light); color: #5b3fa8; border-color: var(--primary-mid); }
     .badge.tissue-buccal { background: #fdf3e0; color: var(--amber); border-color: #fcd89a; }
     .badge.tissue-cord   { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
     .badge.tissue-multi  { background: #f5f3ff; color: #5b21b6; border-color: #ddd6fe; }
     .badge.gen-1st  { background: var(--card); color: var(--muted); border-color: var(--border); }
     .badge.gen-2nd  { background: #fdf3e0; color: var(--amber); border-color: #fcd89a; }
-    .badge.gen-3rd  { background: #f0f2ec; color: #3a5c2a; border-color: var(--sage-mid); }
+    .badge.gen-3rd  { background: var(--primary-light); color: #5b3fa8; border-color: var(--primary-mid); }
     .badge.gen-4th  { background: #fef2f2; color: #9b1a1a; border-color: #fecaca; }
     .badge.gen-gest { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
 
     .perf-cell { display: flex; align-items: center; gap: 8px; }
-    .perf-bar { height: 4px; border-radius: 2px; background: var(--sage); opacity: 0.7; min-width: 2px; }
+    .perf-bar { height: 4px; border-radius: 2px; background: var(--primary); opacity: 0.7; min-width: 2px; }
     .perf-val { font-variant-numeric: tabular-nums; }
     .na { color: var(--light); font-style: italic; }
 
@@ -108,25 +108,25 @@
     .beta-cell { display: flex; align-items: center; gap: 8px; }
     .beta-track { width: 120px; height: 8px; background: var(--border); border-radius: 4px; position: relative; flex-shrink: 0; }
     .beta-bar { position: absolute; top: 0; height: 8px; border-radius: 4px; min-width: 2px; }
-    .beta-bar.pos { background: var(--sage); left: 50%; }
-    .beta-bar.neg { background: #c0392b; right: 50%; }
+    .beta-bar.pos { background: var(--primary); left: 50%; opacity: 0.85; }
+    .beta-bar.neg { background: #e05252; right: 50%; opacity: 0.85; }
     .beta-val { font-variant-numeric: tabular-nums; font-size: 12.5px; white-space: nowrap; }
 
-    .sig-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 3px; background: #e8f5e1; color: #2e6b1a; margin-left: 4px; }
-    .pfdr-sig { color: #2e6b1a; font-weight: 600; }
+    .sig-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 3px; background: var(--primary-light); color: var(--primary); margin-left: 4px; }
+    .pfdr-sig { color: var(--primary); font-weight: 600; }
     .pfdr-trend { color: var(--amber); }
 
     /* FDR pill toggle */
     .sig-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; padding: 6px 12px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--white); font-size: 12.5px; color: var(--muted); font-weight: 500; transition: all .15s; user-select: none; margin-left: 6px; }
-    .sig-toggle:hover { border-color: var(--sage-mid); color: var(--sage); }
-    .sig-toggle.active { border-color: var(--sage); background: var(--sage-light); color: var(--sage); }
-    .sig-toggle .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sage-mid); flex-shrink: 0; }
-    .sig-toggle.active .dot { background: var(--sage); }
+    .sig-toggle:hover { border-color: var(--primary-mid); color: var(--primary); }
+    .sig-toggle.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .sig-toggle .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--primary-mid); flex-shrink: 0; }
+    .sig-toggle.active .dot { background: var(--primary); }
 
     .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 14px; }
     .count { font-size: 12px; color: var(--muted); }
     .info { max-width: 1200px; margin: 0 auto; padding: 0.75rem 2rem; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--border); }
-    .info a { color: var(--sage); }
+    .info a { color: var(--primary); }
   </style>
 </head>
 <body>
@@ -137,7 +137,7 @@
       <h1>Biological Age Model Database</h1>
       <p class="subtitle">Epigenetic and brain age models evaluated in the MIND Consortium across developmental cohorts</p>
     </div>
-    <a href="https://epi-brain-age-dashboard.streamlit.app/" target="_blank" style="font-size:12.5px; color:var(--sage);">&#8599; Full interactive dashboard</a>
+    <a href="https://epi-brain-age-dashboard.streamlit.app/" target="_blank" style="font-size:12.5px; color:var(--primary);">&#8599; Full interactive dashboard</a>
   </div>
 </header>
 
