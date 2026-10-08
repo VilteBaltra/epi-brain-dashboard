@@ -137,7 +137,7 @@
       <h1>Biological Age Model Database</h1>
       <p class="subtitle">Epigenetic and brain age models evaluated in the MIND Consortium across developmental cohorts</p>
     </div>
-    <a href="https://epi-brain-dashboard.streamlit.app" target="_blank" style="font-size:12.5px; color:var(--sage);">&#8599; Full interactive dashboard</a>
+    <a href="https://epi-brain-age-dashboard.streamlit.app/" target="_blank" style="font-size:12.5px; color:var(--sage);">&#8599; Full interactive dashboard</a>
   </div>
 </header>
 
@@ -222,7 +222,7 @@
   <b>wMAE</b> = age-weighted mean absolute error [95% CI]; in years for postnatal clocks, weeks for gestational clocks.
   <b>Pearson r</b> = correlation between predicted and chronological/gestational age [95% CI].
   DunedinPACE, DNAmTL, DunedinPACNI: wMAE not applicable.
-  &nbsp;·&nbsp; <a href="https://epi-brain-dashboard.streamlit.app" target="_blank">Full interactive dashboard ↗</a>
+  &nbsp;·&nbsp; <a href="https://epi-brain-age-dashboard.streamlit.app/" target="_blank">Full interactive dashboard ↗</a>
 </div>
 
 <script>
@@ -625,13 +625,13 @@ function switchTab(tab) {
     info.innerHTML = 'Meta-analytical associations between Brain-PAR and Epigenetic-PAR across MIND Consortium cohorts. '
       + '<b>β</b> = standardised regression coefficient [95% CI]. <b>pFDR</b> = FDR-corrected p-value. '
       + '<b>Age×β</b> = age moderation effect (slope per year). Highlighted rows are FDR-significant (p<sub>FDR</sub> &lt; .05). '
-      + '&nbsp;·&nbsp; <a href="https://epi-brain-dashboard.streamlit.app" target="_blank">Full interactive dashboard ↗</a>';
+      + '&nbsp;·&nbsp; <a href="https://epi-brain-age-dashboard.streamlit.app/" target="_blank">Full interactive dashboard ↗</a>';
   } else {
     info.innerHTML = 'Performance metrics from random-effects meta-analysis across MIND Consortium cohorts (Staginnus et al., 2026). '
       + '<b>wMAE</b> = age-weighted mean absolute error [95% CI]; in years for postnatal clocks, weeks for gestational clocks. '
       + '<b>Pearson r</b> = correlation between predicted and chronological/gestational age [95% CI]. '
       + 'DunedinPACE, DNAmTL, DunedinPACNI: wMAE not applicable. '
-      + '&nbsp;·&nbsp; <a href="https://epi-brain-dashboard.streamlit.app" target="_blank">Full interactive dashboard ↗</a>';
+      + '&nbsp;·&nbsp; <a href="https://epi-brain-age-dashboard.streamlit.app/" target="_blank">Full interactive dashboard ↗</a>';
   }
   applyFilters();
 }
