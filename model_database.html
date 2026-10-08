@@ -20,20 +20,20 @@
       --sage-mid:   #c8d0be;
       --amber:      #92600a;
       --amber-light:#fdf3e0;
+      --rose:       #9b1a1a;
+      --rose-light: #fef2f2;
     }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; color: var(--text); background: var(--bg); line-height: 1.5; }
     a { color: var(--sage); text-decoration: none; }
 
-    /* Header */
     header { background: var(--white); border-bottom: 1px solid var(--border); padding: 1.25rem 2rem; }
-    .header-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .header-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
     h1 { font-size: 17px; font-weight: 600; color: var(--ink); }
     .subtitle { font-size: 13px; color: var(--muted); }
 
-    /* Controls */
-    .controls { max-width: 1100px; margin: 1.25rem auto; padding: 0 2rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .controls { max-width: 1200px; margin: 1.25rem auto; padding: 0 2rem; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     input[type=text] {
-      flex: 1; min-width: 180px; max-width: 280px;
+      flex: 1; min-width: 180px; max-width: 260px;
       padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px;
       font-size: 13px; color: var(--text); background: var(--white); outline: none;
     }
@@ -53,18 +53,17 @@
       font-size: 13px; color: var(--muted); background: var(--white); cursor: pointer;
     }
     .btn-reset:hover { border-color: var(--sage-mid); color: var(--sage); }
+    label.sig-filter { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 5px; cursor: pointer; }
 
-    /* Tabs */
-    .tabs { max-width: 1100px; margin: 0 auto; padding: 0 2rem; display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+    .tabs { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; gap: 0; border-bottom: 1px solid var(--border); }
     .tab {
-      padding: 10px 20px; font-size: 13px; font-weight: 500; color: var(--muted);
-      border-bottom: 2px solid transparent; cursor: pointer; margin-bottom: -1px;
+      padding: 10px 22px; font-size: 13px; font-weight: 500; color: var(--muted);
+      border-bottom: 2px solid transparent; cursor: pointer; margin-bottom: -1px; white-space: nowrap;
     }
     .tab.active { color: var(--sage); border-bottom-color: var(--sage); }
     .tab:hover { color: var(--ink); }
 
-    /* Table wrapper */
-    .table-wrap { max-width: 1100px; margin: 1rem auto 2rem; padding: 0 2rem; overflow-x: auto; }
+    .table-wrap { max-width: 1200px; margin: 1rem auto 2rem; padding: 0 2rem; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     thead th {
       text-align: left; padding: 9px 12px;
@@ -78,10 +77,12 @@
     tbody tr { border-bottom: 1px solid var(--border); }
     tbody tr:last-child { border-bottom: none; }
     tbody tr:hover { background: var(--card); }
-    tbody td { padding: 10px 12px; color: var(--text); vertical-align: top; }
+    tbody tr.sig-row { background: #f6faf4; }
+    tbody tr.sig-row:hover { background: #edf5e9; }
+    tbody td { padding: 9px 12px; color: var(--text); vertical-align: middle; }
     td.model-name { font-weight: 500; color: var(--ink); }
+    .ci { font-size: 11px; color: var(--light); display: block; margin-top: 1px; }
 
-    /* Badges */
     .badge {
       display: inline-block; font-size: 11px; font-weight: 500;
       padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border);
@@ -98,20 +99,24 @@
     .badge.gen-4th  { background: #fef2f2; color: #9b1a1a; border-color: #fecaca; }
     .badge.gen-gest { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
 
-    /* Performance bar */
     .perf-cell { display: flex; align-items: center; gap: 8px; }
     .perf-bar { height: 4px; border-radius: 2px; background: var(--sage); opacity: 0.7; min-width: 2px; }
     .perf-val { font-variant-numeric: tabular-nums; }
     .na { color: var(--light); font-style: italic; }
 
-    /* Empty state */
+    /* Beta bar (centered, for associations) */
+    .beta-cell { display: flex; align-items: center; gap: 6px; }
+    .beta-track { width: 100px; height: 6px; background: var(--border); border-radius: 3px; position: relative; flex-shrink: 0; }
+    .beta-bar { position: absolute; top: 0; height: 6px; border-radius: 3px; }
+    .beta-bar.pos { background: var(--sage); left: 50%; }
+    .beta-bar.neg { background: #c0392b; right: 50%; }
+    .beta-val { font-variant-numeric: tabular-nums; font-size: 12.5px; white-space: nowrap; }
+
+    .sig-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 3px; background: #e8f5e1; color: #2e6b1a; margin-left: 4px; }
+
     .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 14px; }
-
-    /* Count */
     .count { font-size: 12px; color: var(--muted); }
-
-    /* Info box */
-    .info { max-width: 1100px; margin: 0 auto 0; padding: 0.75rem 2rem; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--border); }
+    .info { max-width: 1200px; margin: 0 auto; padding: 0.75rem 2rem; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--border); }
     .info a { color: var(--sage); }
   </style>
 </head>
@@ -130,12 +135,14 @@
 <div class="tabs">
   <div class="tab active" onclick="switchTab('epi')">Epigenetic age models <span class="count" id="epi-count"></span></div>
   <div class="tab" onclick="switchTab('brain')">Brain age models <span class="count" id="brain-count"></span></div>
+  <div class="tab" onclick="switchTab('assoc')">Associations <span class="count" id="assoc-count"></span></div>
 </div>
 
 <div class="controls">
-  <input type="text" id="search" placeholder="Search model name…" oninput="applyFilters()">
+  <input type="text" id="search" placeholder="Search…" oninput="applyFilters()">
 
-  <div id="epi-controls">
+  <!-- Epi-only controls -->
+  <span id="epi-controls">
     <select id="filter-tissue" onchange="applyFilters()">
       <option value="">All tissues</option>
       <option value="blood">Blood</option>
@@ -151,20 +158,43 @@
     </select>
     <select id="filter-gen" onchange="applyFilters()" style="margin-left:6px">
       <option value="">All generations</option>
-      <option value="1st gen">1st generation</option>
-      <option value="2nd gen">2nd generation</option>
-      <option value="3rd gen">3rd generation</option>
-      <option value="4th gen">4th generation</option>
+      <option value="1st gen">1st gen</option>
+      <option value="2nd gen">2nd gen</option>
+      <option value="3rd gen">3rd gen</option>
+      <option value="4th gen">4th gen</option>
       <option value="Gestational">Gestational</option>
     </select>
-  </div>
+  </span>
 
+  <!-- Age filter (epi + brain) -->
   <div class="age-filter" id="age-filter-wrap">
     <span>Training age:</span>
     <input type="number" id="age-from" placeholder="min" onchange="applyFilters()">
     <span>–</span>
     <input type="number" id="age-to" placeholder="max" onchange="applyFilters()">
   </div>
+
+  <!-- Assoc-only controls -->
+  <span id="assoc-controls" style="display:none">
+    <select id="filter-brain" onchange="applyFilters()">
+      <option value="">All brain models</option>
+      <option>Centile2</option><option>DBN</option><option>DevBrainAge</option>
+      <option>DunedinPACNI</option><option>ENIGMA</option><option>Kaufmann</option>
+      <option>PyBrainAge</option><option>Pyment</option>
+    </select>
+    <select id="filter-epi" onchange="applyFilters()" style="margin-left:6px">
+      <option value="">All epi clocks</option>
+      <option>AdaptAge</option><option>AltumAge</option><option>cAge</option>
+      <option>CorticalClock</option><option>DamAge</option><option>DNAmTL</option>
+      <option>DunedinPACE</option><option>Hannum</option><option>Horvath2013</option>
+      <option>PCBrainAge</option><option>PCGrimAge</option><option>PedBE</option>
+      <option>PhenoAge</option><option>skinHorvath</option><option>Wu</option>
+      <option>ZhangBLUP</option><option>ZhangEN</option>
+    </select>
+    <label class="sig-filter" style="margin-left:10px">
+      <input type="checkbox" id="filter-sig" onchange="applyFilters()"> FDR significant only
+    </label>
+  </span>
 
   <button class="btn-reset" onclick="resetFilters()">Reset</button>
 </div>
@@ -174,107 +204,270 @@
     <thead id="table-head"></thead>
     <tbody id="table-body"></tbody>
   </table>
-  <div class="empty" id="empty-msg" style="display:none">No models match the current filters.</div>
+  <div class="empty" id="empty-msg" style="display:none">No results match the current filters.</div>
 </div>
 
-<div class="info">
-  Performance metrics are pooled estimates from random-effects meta-analysis across MIND Consortium cohorts.
-  <b>MAE</b> = pooled mean absolute error (N-weighted across cohorts, unweighted by sample characteristics). <b>wMAE</b> = weighted MAE (lower = better; in years for postnatal clocks, in weeks for gestational clocks). <b>Pearson r</b> = correlation between predicted and chronological/gestational age (higher = better). DunedinPACE and DNAmTL MAE/wMAE not applicable (pace-of-ageing / telomere length scales). <b>Total N</b> = total samples evaluated across all cohorts.
-  DunedinPACE and DNAmTL do not predict age in years so wMAE is not applicable.
+<div class="info" id="info-box">
+  Performance metrics from random-effects meta-analysis across MIND Consortium cohorts (Staginnus, Baltramonaityte et al., 2026).
+  <b>wMAE</b> = age-weighted mean absolute error [95% CI]; in years for postnatal clocks, weeks for gestational clocks.
+  <b>Pearson r</b> = correlation between predicted and chronological/gestational age [95% CI].
+  DunedinPACE, DNAmTL, DunedinPACNI: wMAE not applicable.
   &nbsp;·&nbsp; <a href="https://epi-brain-dashboard.streamlit.app" target="_blank">Full interactive dashboard ↗</a>
 </div>
 
 <script>
 const DATA = {
   epi: [
-    {model:"PCBrainAge",tissue:"cortex",array:"450k",age_min:20,age_max:97,gen:"1st gen",ml:"EN+",MAE:12.52,wMAE:6.53,pearson:0.201,N:20913},
-    {model:"PCGrimAge",tissue:"blood",array:"450k",age_min:24,age_max:92,gen:"2nd gen",ml:"EN",MAE:23.68,wMAE:11.53,pearson:0.286,N:19789},
-    {model:"CorticalClock",tissue:"cortex",array:"450k",age_min:1.3,age_max:108,gen:"1st gen",ml:"EN",MAE:13.26,wMAE:9.18,pearson:0.278,N:19789},
-    {model:"cAge",tissue:"blood",array:"450k",age_min:2,age_max:101,gen:"1st gen",ml:"EN",MAE:3.78,wMAE:1.87,pearson:0.383,N:19664},
-    {model:"AltumAge",tissue:"multi",array:"450k",age_min:-0.8,age_max:112,gen:"1st gen",ml:"Deep learning",MAE:2.95,wMAE:1.98,pearson:0.312,N:20913},
-    {model:"Horvath2013",tissue:"multi",array:"450k",age_min:-0.5,age_max:100,gen:"1st gen",ml:"EN",MAE:2.77,wMAE:1.63,pearson:0.258,N:20913},
-    {model:"DamAge",tissue:"blood",array:"450k",age_min:23.7,age_max:75,gen:"4th gen",ml:"EN",MAE:55.79,wMAE:27.34,pearson:0.177,N:20913},
-    {model:"AdaptAge",tissue:"blood",array:"450k",age_min:23.7,age_max:75,gen:"4th gen",ml:"EN",MAE:29.14,wMAE:14.42,pearson:0.141,N:20913},
-    {model:"DunedinPACE",tissue:"blood",array:"450k",age_min:45,age_max:45,gen:"3rd gen",ml:"EN",MAE:null,wMAE:null,pearson:0.105,N:20913},
-    {model:"Hannum",tissue:"blood",array:"450k",age_min:19,age_max:101,gen:"1st gen",ml:"EN",MAE:10.97,wMAE:4.44,pearson:0.232,N:20087},
-    {model:"PhenoAge",tissue:"blood",array:"450k",age_min:21,age_max:100,gen:"2nd gen",ml:"EN",MAE:14.67,wMAE:5.13,pearson:0.234,N:20087},
-    {model:"skinHorvath",tissue:"multi",array:"450k",age_min:-0.2,age_max:94,gen:"1st gen",ml:"EN",MAE:2.91,wMAE:1.85,pearson:0.386,N:20087},
-    {model:"PedBE",tissue:"buccal",array:"450k",age_min:0.2,age_max:19.5,gen:"1st gen",ml:"EN",MAE:4.40,wMAE:1.65,pearson:0.253,N:19965},
-    {model:"Wu",tissue:"blood",array:"450k",age_min:0.8,age_max:17.7,gen:"1st gen",ml:"EN",MAE:4.74,wMAE:2.53,pearson:0.202,N:20087},
-    {model:"DNAmTL",tissue:"blood",array:"450k",age_min:22.2,age_max:93.1,gen:"2nd gen",ml:"EN",MAE:null,wMAE:null,pearson:0.156,N:14045},
-    {model:"ZhangBLUP",tissue:"blood",array:"450k",age_min:2,age_max:104,gen:"1st gen",ml:"BLUP",MAE:5.70,wMAE:2.66,pearson:0.320,N:20087},
-    {model:"ZhangEN",tissue:"blood",array:"450k",age_min:2,age_max:104,gen:"1st gen",ml:"EN",MAE:9.11,wMAE:3.26,pearson:0.354,N:20087},
-    {model:"Bohlin_conv",tissue:"cord",array:"450k",age_min:null,age_max:null,gen:"Gestational",ml:"EN",MAE:0.03,wMAE:0.027,pearson:0.812,N:3735},
-    {model:"Knight_conv",tissue:"cord",array:"450k",age_min:null,age_max:null,gen:"Gestational",ml:"EN",MAE:0.06,wMAE:0.053,pearson:0.632,N:3963},
-    {model:"EPIC_conv",tissue:"cord",array:"EPICv1",age_min:null,age_max:null,gen:"Gestational",ml:"Lasso",MAE:3.73,wMAE:0.333,pearson:0.782,N:1739}
+  {model:"PCBrainAge",tissue:"cortex",array:"450k",age_min:20,age_max:97,gen:"1st gen",ml:"EN+",k:45,wMAE:6.528,wMAE_lb:3.234,wMAE_ub:13.174,pearson:0.201,pearson_lb:0.075,pearson_ub:0.32,pearson_p:".002",pearson_pFDR:".002"},
+  {model:"PCGrimAge",tissue:"blood",array:"450k",age_min:24,age_max:92,gen:"2nd gen",ml:"EN",k:44,wMAE:11.532,wMAE_lb:5.714,wMAE_ub:23.272,pearson:0.286,pearson_lb:0.164,pearson_ub:0.4,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"CorticalClock",tissue:"cortex",array:"450k",age_min:1.3,age_max:108,gen:"1st gen",ml:"EN",k:44,wMAE:9.178,wMAE_lb:4.548,wMAE_ub:18.523,pearson:0.278,pearson_lb:0.155,pearson_ub:0.392,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"cAge",tissue:"blood",array:"450k",age_min:2,age_max:101,gen:"1st gen",ml:"EN",k:43,wMAE:1.873,wMAE_lb:0.928,wMAE_ub:3.78,pearson:0.383,pearson_lb:0.269,pearson_ub:0.487,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"AltumAge",tissue:"multi",array:"450k",age_min:-0.8,age_max:112,gen:"1st gen",ml:"Deep learning",k:45,wMAE:1.978,wMAE_lb:0.98,wMAE_ub:3.991,pearson:0.312,pearson_lb:0.191,pearson_ub:0.423,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"Horvath2013",tissue:"multi",array:"450k",age_min:-0.5,age_max:100,gen:"1st gen",ml:"EN",k:45,wMAE:1.633,wMAE_lb:0.809,wMAE_ub:3.296,pearson:0.258,pearson_lb:0.135,pearson_ub:0.374,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"DamAge",tissue:"blood",array:"450k",age_min:23.7,age_max:75,gen:"4th gen",ml:"EN",k:45,wMAE:27.342,wMAE_lb:13.548,wMAE_ub:55.18,pearson:0.177,pearson_lb:0.05,pearson_ub:0.298,pearson_p:".007",pearson_pFDR:".008"},
+  {model:"AdaptAge",tissue:"blood",array:"450k",age_min:23.7,age_max:75,gen:"4th gen",ml:"EN",k:45,wMAE:14.421,wMAE_lb:7.146,wMAE_ub:29.105,pearson:0.141,pearson_lb:0.014,pearson_ub:0.264,pearson_p:".030",pearson_pFDR:".032"},
+  {model:"DunedinPACE",tissue:"blood",array:"450k",age_min:45,age_max:45,gen:"3rd gen",ml:"EN",k:45,wMAE:null,wMAE_lb:null,wMAE_ub:null,pearson:0.105,pearson_lb:-0.024,pearson_ub:0.23,pearson_p:".109",pearson_pFDR:".109"},
+  {model:"Hannum",tissue:"blood",array:"450k",age_min:19,age_max:101,gen:"1st gen",ml:"EN",k:42,wMAE:4.442,wMAE_lb:2.201,wMAE_ub:8.965,pearson:0.232,pearson_lb:0.107,pearson_ub:0.35,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"PhenoAge",tissue:"blood",array:"450k",age_min:21,age_max:100,gen:"2nd gen",ml:"EN",k:42,wMAE:5.126,wMAE_lb:2.54,wMAE_ub:10.347,pearson:0.234,pearson_lb:0.11,pearson_ub:0.352,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"skinHorvath",tissue:"multi",array:"450k",age_min:-0.2,age_max:94,gen:"1st gen",ml:"EN",k:42,wMAE:1.846,wMAE_lb:0.915,wMAE_ub:3.725,pearson:0.386,pearson_lb:0.271,pearson_ub:0.49,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"PedBE",tissue:"buccal",array:"450k",age_min:0.2,age_max:19.5,gen:"1st gen",ml:"EN",k:41,wMAE:1.654,wMAE_lb:0.82,wMAE_ub:3.339,pearson:0.253,pearson_lb:0.129,pearson_ub:0.369,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"Wu",tissue:"blood",array:"450k",age_min:0.8,age_max:17.7,gen:"1st gen",ml:"EN",k:42,wMAE:2.531,wMAE_lb:1.254,wMAE_ub:5.109,pearson:0.202,pearson_lb:0.076,pearson_ub:0.321,pearson_p:".002",pearson_pFDR:".002"},
+  {model:"DNAmTL",tissue:"blood",array:"450k",age_min:22.2,age_max:93.1,gen:"2nd gen",ml:"EN",k:23,wMAE:null,wMAE_lb:null,wMAE_ub:null,pearson:0.156,pearson_lb:0.028,pearson_ub:0.278,pearson_p:".017",pearson_pFDR:".019"},
+  {model:"ZhangBLUP",tissue:"blood",array:"450k",age_min:2,age_max:104,gen:"1st gen",ml:"BLUP",k:42,wMAE:2.657,wMAE_lb:1.316,wMAE_ub:5.363,pearson:0.32,pearson_lb:0.2,pearson_ub:0.43,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"ZhangEN",tissue:"blood",array:"450k",age_min:2,age_max:104,gen:"1st gen",ml:"EN",k:42,wMAE:3.262,wMAE_lb:1.616,wMAE_ub:6.583,pearson:0.354,pearson_lb:0.237,pearson_ub:0.461,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"Bohlin_conv",tissue:"cord",array:"450k",age_min:null,age_max:null,gen:"Gestational",ml:"EN",k:6,wMAE:0.027,wMAE_lb:0.013,wMAE_ub:0.055,pearson:0.812,pearson_lb:0.761,pearson_ub:0.852,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"Knight_conv",tissue:"cord",array:"450k",age_min:null,age_max:null,gen:"Gestational",ml:"EN",k:7,wMAE:0.053,wMAE_lb:0.026,wMAE_ub:0.107,pearson:0.632,pearson_lb:0.546,pearson_ub:0.704,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"EPIC_conv",tissue:"cord",array:"EPICv1",age_min:null,age_max:null,gen:"Gestational",ml:"Lasso",k:5,wMAE:0.333,wMAE_lb:0.163,wMAE_ub:0.681,pearson:0.782,pearson_lb:0.723,pearson_ub:0.83,pearson_p:"< .001",pearson_pFDR:"< .001"}
   ],
   brain: [
-    {model:"ENIGMA",ml_method:"Ridge regression",age_min:18,age_max:75,MAE:8.03,wMAE:2.39,pearson:0.095,N:14510},
-    {model:"Centile2",ml_method:"SVR (RBF kernel)",age_min:5,age_max:40,MAE:2.91,wMAE:1.44,pearson:0.281,N:5853},
-    {model:"Kaufmann",ml_method:"XGBoost (sex-specific)",age_min:3,age_max:96,MAE:4.98,wMAE:1.58,pearson:0.268,N:4242},
-    {model:"PyBrainAge",ml_method:"Extra Trees",age_min:2,age_max:100,MAE:9.66,wMAE:2.36,pearson:0.147,N:12150},
-    {model:"DevBrainAge",ml_method:"XGBoost",age_min:9,age_max:19,MAE:2.76,wMAE:1.41,pearson:0.278,N:5854},
-    {model:"Pyment",ml_method:"CNN (SFCN-reg)",age_min:3,age_max:85,MAE:1.60,wMAE:1.36,pearson:0.329,N:10522},
-    {model:"DBN",ml_method:"CNN (Inception-ResNetV2)",age_min:3,age_max:95,MAE:10.49,wMAE:1.49,pearson:0.246,N:2761},
-    {model:"DunedinPACNI",ml_method:"Elastic Net",age_min:45,age_max:45,MAE:null,wMAE:null,pearson:-0.102,N:14513}
+  {model:"ENIGMA",ml_method:"Ridge regression",age_min:18,age_max:75,k:31,wMAE:2.388,wMAE_lb:1.395,wMAE_ub:3.381,pearson:0.095,pearson_lb:0.009,pearson_ub:0.18,pearson_p:".031",pearson_pFDR:".031"},
+  {model:"Centile2",ml_method:"SVR (RBF kernel)",age_min:5,age_max:40,k:27,wMAE:1.436,wMAE_lb:0.444,wMAE_ub:2.429,pearson:0.281,pearson_lb:0.197,pearson_ub:0.36,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"Kaufmann",ml_method:"XGBoost (sex-specific)",age_min:3,age_max:96,k:24,wMAE:1.576,wMAE_lb:0.583,wMAE_ub:2.568,pearson:0.268,pearson_lb:0.183,pearson_ub:0.35,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"PyBrainAge",ml_method:"Extra Trees",age_min:2,age_max:100,k:30,wMAE:2.361,wMAE_lb:1.368,wMAE_ub:3.354,pearson:0.147,pearson_lb:0.061,pearson_ub:0.231,pearson_p:".001",pearson_pFDR:".001"},
+  {model:"DevBrainAge",ml_method:"XGBoost",age_min:9,age_max:19,k:27,wMAE:1.411,wMAE_lb:0.419,wMAE_ub:2.404,pearson:0.278,pearson_lb:0.195,pearson_ub:0.358,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"Pyment",ml_method:"CNN (SFCN-reg)",age_min:3,age_max:85,k:27,wMAE:1.362,wMAE_lb:0.369,wMAE_ub:2.354,pearson:0.329,pearson_lb:0.249,pearson_ub:0.405,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"DBN",ml_method:"CNN (Inception-ResNetV2)",age_min:3,age_max:95,k:18,wMAE:1.494,wMAE_lb:0.502,wMAE_ub:2.487,pearson:0.246,pearson_lb:0.157,pearson_ub:0.332,pearson_p:"< .001",pearson_pFDR:"< .001"},
+  {model:"DunedinPACNI",ml_method:"Elastic Net",age_min:45,age_max:45,k:31,wMAE:null,wMAE_lb:null,wMAE_ub:null,pearson:-0.102,pearson_lb:-0.187,pearson_ub:-0.016,pearson_p:".021",pearson_pFDR:".024"}
+  ],
+  assoc: [
+  {brain:"Centile2",epi:"AdaptAge",k:19,beta:-0.003,ci_lb:-0.0272,ci_ub:0.0211,p:".806",pFDR:".927",sig:0,age_b:0.0015,age_p:".637"},
+  {brain:"Centile2",epi:"AltumAge",k:19,beta:0.0064,ci_lb:-0.0194,ci_ub:0.0322,p:".629",pFDR:".791",sig:0,age_b:0.0004,age_p:".898"},
+  {brain:"Centile2",epi:"cAge",k:18,beta:0.0006,ci_lb:-0.0231,ci_ub:0.0243,p:".960",pFDR:".984",sig:0,age_b:0.0041,age_p:".207"},
+  {brain:"Centile2",epi:"CorticalClock",k:19,beta:0.0071,ci_lb:-0.0215,ci_ub:0.0358,p:".626",pFDR:".791",sig:0,age_b:0.0086,age_p:".013"},
+  {brain:"Centile2",epi:"DamAge",k:19,beta:0.0119,ci_lb:-0.0132,ci_ub:0.0371,p:".353",pFDR:".600",sig:0,age_b:-0.0031,age_p:".331"},
+  {brain:"Centile2",epi:"DNAmTL",k:8,beta:-0.0602,ci_lb:-0.121,ci_ub:0.0007,p:".053",pFDR:".209",sig:0,age_b:0.0068,age_p:".202"},
+  {brain:"Centile2",epi:"DunedinPACE",k:15,beta:0.0264,ci_lb:-0.0029,ci_ub:0.0558,p:".077",pFDR:".245",sig:0,age_b:0.006,age_p:".166"},
+  {brain:"Centile2",epi:"Hannum",k:16,beta:0.0132,ci_lb:-0.0135,ci_ub:0.04,p:".333",pFDR:".580",sig:0,age_b:0.0015,age_p:".680"},
+  {brain:"Centile2",epi:"Horvath2013",k:19,beta:-0.01,ci_lb:-0.0299,ci_ub:0.0099,p:".326",pFDR:".580",sig:0,age_b:-0.0002,age_p:".930"},
+  {brain:"Centile2",epi:"PCBrainAge",k:19,beta:-0.0011,ci_lb:-0.0271,ci_ub:0.0248,p:".932",pFDR:".984",sig:0,age_b:0.0053,age_p:".121"},
+  {brain:"Centile2",epi:"PCGrimAge",k:19,beta:0.0239,ci_lb:-0.0048,ci_ub:0.0526,p:".102",pFDR:".273",sig:0,age_b:0.0036,age_p:".302"},
+  {brain:"Centile2",epi:"PedBE",k:15,beta:0.0171,ci_lb:-0.0264,ci_ub:0.0607,p:".441",pFDR:".666",sig:0,age_b:0.0099,age_p:".039"},
+  {brain:"Centile2",epi:"PhenoAge",k:16,beta:-0.0007,ci_lb:-0.0236,ci_ub:0.0223,p:".955",pFDR:".984",sig:0,age_b:-0.0029,age_p:".421"},
+  {brain:"Centile2",epi:"skinHorvath",k:16,beta:0.0129,ci_lb:-0.0084,ci_ub:0.0343,p:".234",pFDR:".498",sig:0,age_b:0.0058,age_p:".076"},
+  {brain:"Centile2",epi:"Wu",k:16,beta:0.0013,ci_lb:-0.0186,ci_ub:0.0213,p:".894",pFDR:".984",sig:0,age_b:0.0021,age_p:".550"},
+  {brain:"Centile2",epi:"ZhangBLUP",k:16,beta:-0.0059,ci_lb:-0.0348,ci_ub:0.0231,p:".690",pFDR:".853",sig:0,age_b:-0.0026,age_p:".462"},
+  {brain:"Centile2",epi:"ZhangEN",k:16,beta:0.0004,ci_lb:-0.0245,ci_ub:0.0253,p:".976",pFDR:".986",sig:0,age_b:-0.0011,age_p:".725"},
+  {brain:"DBN",epi:"AdaptAge",k:9,beta:-0.0049,ci_lb:-0.063,ci_ub:0.0533,p:".870",pFDR:".969",sig:0,age_b:0.006,age_p:".248"},
+  {brain:"DBN",epi:"AltumAge",k:9,beta:0.0515,ci_lb:-0.0065,ci_ub:0.1096,p:".082",pFDR:".253",sig:0,age_b:-0.0037,age_p:".428"},
+  {brain:"DBN",epi:"cAge",k:8,beta:0.0061,ci_lb:-0.0554,ci_ub:0.0676,p:".846",pFDR:".950",sig:0,age_b:0.0014,age_p:".804"},
+  {brain:"DBN",epi:"CorticalClock",k:9,beta:-0.0015,ci_lb:-0.0591,ci_ub:0.0561,p:".959",pFDR:".984",sig:0,age_b:-0.0048,age_p:".340"},
+  {brain:"DBN",epi:"DamAge",k:9,beta:0.0407,ci_lb:-0.0153,ci_ub:0.0966,p:".155",pFDR:".382",sig:0,age_b:0.0003,age_p:".951"},
+  {brain:"DBN",epi:"DNAmTL",k:7,beta:0.0075,ci_lb:-0.0549,ci_ub:0.0698,p:".815",pFDR:".927",sig:0,age_b:-0.0008,age_p:".878"},
+  {brain:"DBN",epi:"DunedinPACE",k:7,beta:0.0241,ci_lb:-0.0395,ci_ub:0.0877,p:".458",pFDR:".676",sig:0,age_b:-0.0075,age_p:".458"},
+  {brain:"DBN",epi:"Hannum",k:9,beta:0.026,ci_lb:-0.0319,ci_ub:0.0839,p:".378",pFDR:".620",sig:0,age_b:0.0018,age_p:".739"},
+  {brain:"DBN",epi:"Horvath2013",k:9,beta:-0.0022,ci_lb:-0.0594,ci_ub:0.055,p:".940",pFDR:".984",sig:0,age_b:-0.0009,age_p:".860"},
+  {brain:"DBN",epi:"PCBrainAge",k:9,beta:0.0325,ci_lb:-0.0286,ci_ub:0.0935,p:".297",pFDR:".573",sig:0,age_b:0.0,age_p:"> .999"},
+  {brain:"DBN",epi:"PCGrimAge",k:9,beta:0.0162,ci_lb:-0.0469,ci_ub:0.0792,p:".615",pFDR:".789",sig:0,age_b:-0.0011,age_p:".857"},
+  {brain:"DBN",epi:"PedBE",k:8,beta:-0.0214,ci_lb:-0.0796,ci_ub:0.0368,p:".471",pFDR:".689",sig:0,age_b:-0.0024,age_p:".630"},
+  {brain:"DBN",epi:"PhenoAge",k:9,beta:-0.0147,ci_lb:-0.0718,ci_ub:0.0425,p:".615",pFDR:".789",sig:0,age_b:-0.0009,age_p:".866"},
+  {brain:"DBN",epi:"skinHorvath",k:9,beta:0.0409,ci_lb:-0.0137,ci_ub:0.0955,p:".142",pFDR:".358",sig:0,age_b:0.0055,age_p:".263"},
+  {brain:"DBN",epi:"Wu",k:9,beta:-0.0148,ci_lb:-0.0708,ci_ub:0.0412,p:".604",pFDR:".789",sig:0,age_b:0.0059,age_p:".255"},
+  {brain:"DBN",epi:"ZhangBLUP",k:9,beta:0.0164,ci_lb:-0.0411,ci_ub:0.0739,p:".576",pFDR:".778",sig:0,age_b:-0.0043,age_p:".401"},
+  {brain:"DBN",epi:"ZhangEN",k:9,beta:-0.0019,ci_lb:-0.0611,ci_ub:0.0573,p:".949",pFDR:".984",sig:0,age_b:-0.0042,age_p:".437"},
+  {brain:"DevBrainAge",epi:"AdaptAge",k:19,beta:-0.0219,ci_lb:-0.0593,ci_ub:0.0155,p:".251",pFDR:".526",sig:0,age_b:0.0023,age_p:".567"},
+  {brain:"DevBrainAge",epi:"AltumAge",k:19,beta:0.0147,ci_lb:-0.02,ci_ub:0.0494,p:".405",pFDR:".626",sig:0,age_b:-0.0114,age_p:".002"},
+  {brain:"DevBrainAge",epi:"cAge",k:18,beta:0.0621,ci_lb:0.0246,ci_ub:0.0996,p:".001",pFDR:".019",sig:1,age_b:0.0027,age_p:".523"},
+  {brain:"DevBrainAge",epi:"CorticalClock",k:19,beta:0.048,ci_lb:0.0118,ci_ub:0.0842,p:".009",pFDR:".081",sig:0,age_b:0.0015,age_p:".703"},
+  {brain:"DevBrainAge",epi:"DamAge",k:19,beta:0.0386,ci_lb:0.0012,ci_ub:0.076,p:".043",pFDR:".182",sig:0,age_b:-0.003,age_p:".462"},
+  {brain:"DevBrainAge",epi:"DNAmTL",k:8,beta:-0.0071,ci_lb:-0.0641,ci_ub:0.05,p:".808",pFDR:".927",sig:0,age_b:-0.0057,age_p:".237"},
+  {brain:"DevBrainAge",epi:"DunedinPACE",k:15,beta:0.0531,ci_lb:0.0127,ci_ub:0.0936,p:".010",pFDR:".081",sig:0,age_b:0.006,age_p:".262"},
+  {brain:"DevBrainAge",epi:"Hannum",k:16,beta:0.0365,ci_lb:-0.0072,ci_ub:0.0802,p:".101",pFDR:".273",sig:0,age_b:0.0043,age_p:".339"},
+  {brain:"DevBrainAge",epi:"Horvath2013",k:19,beta:0.0195,ci_lb:-0.0165,ci_ub:0.0556,p:".288",pFDR:".573",sig:0,age_b:-0.003,age_p:".440"},
+  {brain:"DevBrainAge",epi:"PCBrainAge",k:19,beta:0.0299,ci_lb:-0.0091,ci_ub:0.0689,p:".133",pFDR:".341",sig:0,age_b:-0.0017,age_p:".697"},
+  {brain:"DevBrainAge",epi:"PCGrimAge",k:19,beta:0.0329,ci_lb:-0.0065,ci_ub:0.0722,p:".101",pFDR:".273",sig:0,age_b:0.0007,age_p:".874"},
+  {brain:"DevBrainAge",epi:"PedBE",k:15,beta:0.0219,ci_lb:-0.0221,ci_ub:0.0659,p:".330",pFDR:".580",sig:0,age_b:-0.0041,age_p:".348"},
+  {brain:"DevBrainAge",epi:"PhenoAge",k:16,beta:0.0307,ci_lb:-0.0136,ci_ub:0.075,p:".175",pFDR:".410",sig:0,age_b:0.0002,age_p:".959"},
+  {brain:"DevBrainAge",epi:"skinHorvath",k:16,beta:0.0301,ci_lb:-0.0123,ci_ub:0.0724,p:".164",pFDR:".391",sig:0,age_b:-0.0006,age_p:".882"},
+  {brain:"DevBrainAge",epi:"Wu",k:16,beta:0.0382,ci_lb:-0.003,ci_ub:0.0793,p:".069",pFDR:".228",sig:0,age_b:-0.0056,age_p:".192"},
+  {brain:"DevBrainAge",epi:"ZhangBLUP",k:16,beta:0.0153,ci_lb:-0.0289,ci_ub:0.0594,p:".498",pFDR:".716",sig:0,age_b:0.0036,age_p:".401"},
+  {brain:"DevBrainAge",epi:"ZhangEN",k:16,beta:-0.0056,ci_lb:-0.0483,ci_ub:0.0371,p:".796",pFDR:".927",sig:0,age_b:0.0006,age_p:".884"},
+  {brain:"DunedinPACNI",epi:"AdaptAge",k:31,beta:0.0086,ci_lb:-0.013,ci_ub:0.0302,p:".436",pFDR:".666",sig:0,age_b:0.0042,age_p:".120"},
+  {brain:"DunedinPACNI",epi:"AltumAge",k:31,beta:-0.0028,ci_lb:-0.024,ci_ub:0.0185,p:".799",pFDR:".927",sig:0,age_b:0.0052,age_p:".052"},
+  {brain:"DunedinPACNI",epi:"cAge",k:30,beta:-0.0102,ci_lb:-0.0312,ci_ub:0.0108,p:".341",pFDR:".586",sig:0,age_b:-0.0001,age_p:".976"},
+  {brain:"DunedinPACNI",epi:"CorticalClock",k:31,beta:0.014,ci_lb:-0.0076,ci_ub:0.0355,p:".204",pFDR:".455",sig:0,age_b:0.0001,age_p:".975"},
+  {brain:"DunedinPACNI",epi:"DamAge",k:31,beta:0.0124,ci_lb:-0.0096,ci_ub:0.0344,p:".270",pFDR:".556",sig:0,age_b:-0.0034,age_p:".214"},
+  {brain:"DunedinPACNI",epi:"DNAmTL",k:12,beta:0.0419,ci_lb:-0.0026,ci_ub:0.0863,p:".065",pFDR:".226",sig:0,age_b:0.0032,age_p:".468"},
+  {brain:"DunedinPACNI",epi:"DunedinPACE",k:27,beta:0.0376,ci_lb:0.0151,ci_ub:0.0601,p:".001",pFDR:".019",sig:1,age_b:0.0008,age_p:".793"},
+  {brain:"DunedinPACNI",epi:"Hannum",k:28,beta:0.0078,ci_lb:-0.0151,ci_ub:0.0306,p:".505",pFDR:".716",sig:0,age_b:-0.0031,age_p:".272"},
+  {brain:"DunedinPACNI",epi:"Horvath2013",k:31,beta:0.0212,ci_lb:-0.0005,ci_ub:0.0429,p:".056",pFDR:".209",sig:0,age_b:0.0077,age_p:".005"},
+  {brain:"DunedinPACNI",epi:"PCBrainAge",k:31,beta:0.0038,ci_lb:-0.0186,ci_ub:0.0262,p:".738",pFDR:".904",sig:0,age_b:0.0012,age_p:".659"},
+  {brain:"DunedinPACNI",epi:"PCGrimAge",k:31,beta:0.0403,ci_lb:0.0181,ci_ub:0.0625,p:"< .001",pFDR:".013",sig:1,age_b:-0.0023,age_p:".410"},
+  {brain:"DunedinPACNI",epi:"PedBE",k:27,beta:-0.0161,ci_lb:-0.0385,ci_ub:0.0063,p:".158",pFDR:".384",sig:0,age_b:0.0043,age_p:".129"},
+  {brain:"DunedinPACNI",epi:"PhenoAge",k:28,beta:0.0225,ci_lb:-0.0006,ci_ub:0.0457,p:".057",pFDR:".209",sig:0,age_b:0.0003,age_p:".927"},
+  {brain:"DunedinPACNI",epi:"skinHorvath",k:28,beta:-0.0011,ci_lb:-0.0236,ci_ub:0.0215,p:".926",pFDR:".984",sig:0,age_b:0.0064,age_p:".019"},
+  {brain:"DunedinPACNI",epi:"Wu",k:28,beta:0.0195,ci_lb:-0.0033,ci_ub:0.0423,p:".094",pFDR:".272",sig:0,age_b:0.0057,age_p:".042"},
+  {brain:"DunedinPACNI",epi:"ZhangBLUP",k:28,beta:0.0251,ci_lb:0.0024,ci_ub:0.0478,p:".030",pFDR:".142",sig:0,age_b:-0.0076,age_p:".007"},
+  {brain:"DunedinPACNI",epi:"ZhangEN",k:28,beta:0.0059,ci_lb:-0.0169,ci_ub:0.0287,p:".614",pFDR:".789",sig:0,age_b:-0.0007,age_p:".813"},
+  {brain:"ENIGMA",epi:"AdaptAge",k:31,beta:0.0222,ci_lb:-0.001,ci_ub:0.0454,p:".061",pFDR:".219",sig:0,age_b:-0.0031,age_p:".270"},
+  {brain:"ENIGMA",epi:"AltumAge",k:31,beta:0.0223,ci_lb:-0.0015,ci_ub:0.0461,p:".067",pFDR:".227",sig:0,age_b:0.0018,age_p:".528"},
+  {brain:"ENIGMA",epi:"cAge",k:30,beta:-0.0006,ci_lb:-0.0242,ci_ub:0.0231,p:".962",pFDR:".984",sig:0,age_b:0.0017,age_p:".547"},
+  {brain:"ENIGMA",epi:"CorticalClock",k:31,beta:0.0201,ci_lb:-0.0034,ci_ub:0.0435,p:".093",pFDR:".272",sig:0,age_b:0.0061,age_p:".031"},
+  {brain:"ENIGMA",epi:"DamAge",k:31,beta:0.0013,ci_lb:-0.022,ci_ub:0.0247,p:".910",pFDR:".984",sig:0,age_b:0.0024,age_p:".399"},
+  {brain:"ENIGMA",epi:"DNAmTL",k:12,beta:-0.0051,ci_lb:-0.0483,ci_ub:0.0381,p:".818",pFDR:".927",sig:0,age_b:-0.003,age_p:".492"},
+  {brain:"ENIGMA",epi:"DunedinPACE",k:27,beta:0.0555,ci_lb:0.0314,ci_ub:0.0797,p:"< .001",pFDR:".001",sig:1,age_b:0.0068,age_p:".023"},
+  {brain:"ENIGMA",epi:"Hannum",k:28,beta:0.0034,ci_lb:-0.0216,ci_ub:0.0285,p:".789",pFDR:".927",sig:0,age_b:0.0021,age_p:".464"},
+  {brain:"ENIGMA",epi:"Horvath2013",k:31,beta:0.0464,ci_lb:0.0235,ci_ub:0.0694,p:"< .001",pFDR:".003",sig:1,age_b:-0.0005,age_p:".848"},
+  {brain:"ENIGMA",epi:"PCBrainAge",k:31,beta:0.0315,ci_lb:0.0076,ci_ub:0.0555,p:".010",pFDR:".081",sig:0,age_b:0.0041,age_p:".161"},
+  {brain:"ENIGMA",epi:"PCGrimAge",k:31,beta:0.0526,ci_lb:0.0282,ci_ub:0.0771,p:"< .001",pFDR:".002",sig:1,age_b:0.0041,age_p:".160"},
+  {brain:"ENIGMA",epi:"PedBE",k:27,beta:0.0109,ci_lb:-0.0141,ci_ub:0.036,p:".393",pFDR:".622",sig:0,age_b:0.002,age_p:".493"},
+  {brain:"ENIGMA",epi:"PhenoAge",k:28,beta:0.0381,ci_lb:0.0122,ci_ub:0.0641,p:".004",pFDR:".045",sig:1,age_b:0.0041,age_p:".182"},
+  {brain:"ENIGMA",epi:"skinHorvath",k:28,beta:0.029,ci_lb:0.0047,ci_ub:0.0533,p:".019",pFDR:".110",sig:0,age_b:-0.0006,age_p:".829"},
+  {brain:"ENIGMA",epi:"Wu",k:28,beta:0.041,ci_lb:0.0153,ci_ub:0.0667,p:".002",pFDR:".024",sig:1,age_b:-0.0038,age_p:".219"},
+  {brain:"ENIGMA",epi:"ZhangBLUP",k:28,beta:0.0082,ci_lb:-0.0159,ci_ub:0.0323,p:".504",pFDR:".716",sig:0,age_b:0.0002,age_p:".935"},
+  {brain:"ENIGMA",epi:"ZhangEN",k:28,beta:-0.0106,ci_lb:-0.0349,ci_ub:0.0136,p:".389",pFDR:".622",sig:0,age_b:0.0002,age_p:".943"},
+  {brain:"Kaufmann",epi:"AdaptAge",k:16,beta:-0.0204,ci_lb:-0.0583,ci_ub:0.0175,p:".290",pFDR:".573",sig:0,age_b:-0.0018,age_p:".662"},
+  {brain:"Kaufmann",epi:"AltumAge",k:16,beta:0.0454,ci_lb:0.0062,ci_ub:0.0845,p:".023",pFDR:".117",sig:0,age_b:-0.0038,age_p:".361"},
+  {brain:"Kaufmann",epi:"cAge",k:15,beta:0.0469,ci_lb:0.0088,ci_ub:0.0849,p:".016",pFDR:".095",sig:0,age_b:0.0014,age_p:".730"},
+  {brain:"Kaufmann",epi:"CorticalClock",k:16,beta:0.0509,ci_lb:0.0113,ci_ub:0.0904,p:".012",pFDR:".089",sig:0,age_b:0.0013,age_p:".746"},
+  {brain:"Kaufmann",epi:"DamAge",k:16,beta:0.0158,ci_lb:-0.0213,ci_ub:0.0529,p:".403",pFDR:".626",sig:0,age_b:-0.0004,age_p:".921"},
+  {brain:"Kaufmann",epi:"DNAmTL",k:8,beta:0.0238,ci_lb:-0.0307,ci_ub:0.0782,p:".392",pFDR:".622",sig:0,age_b:0.0017,age_p:".705"},
+  {brain:"Kaufmann",epi:"DunedinPACE",k:12,beta:0.0489,ci_lb:0.0076,ci_ub:0.0902,p:".020",pFDR:".110",sig:0,age_b:0.0019,age_p:".732"},
+  {brain:"Kaufmann",epi:"Hannum",k:16,beta:0.0358,ci_lb:-0.0009,ci_ub:0.0726,p:".056",pFDR:".209",sig:0,age_b:-0.0004,age_p:".910"},
+  {brain:"Kaufmann",epi:"Horvath2013",k:16,beta:0.0459,ci_lb:0.0085,ci_ub:0.0832,p:".016",pFDR:".095",sig:0,age_b:-0.0076,age_p:".049"},
+  {brain:"Kaufmann",epi:"PCBrainAge",k:16,beta:0.0476,ci_lb:0.0092,ci_ub:0.0859,p:".015",pFDR:".095",sig:0,age_b:0.0028,age_p:".517"},
+  {brain:"Kaufmann",epi:"PCGrimAge",k:16,beta:0.0313,ci_lb:-0.0073,ci_ub:0.0699,p:".111",pFDR:".292",sig:0,age_b:0.0042,age_p:".319"},
+  {brain:"Kaufmann",epi:"PedBE",k:15,beta:0.0186,ci_lb:-0.0218,ci_ub:0.059,p:".367",pFDR:".609",sig:0,age_b:0.0035,age_p:".427"},
+  {brain:"Kaufmann",epi:"PhenoAge",k:16,beta:0.0201,ci_lb:-0.0197,ci_ub:0.0599,p:".322",pFDR:".580",sig:0,age_b:0.0016,age_p:".699"},
+  {brain:"Kaufmann",epi:"skinHorvath",k:16,beta:0.0634,ci_lb:0.0261,ci_ub:0.1008,p:".001",pFDR:".019",sig:1,age_b:0.0043,age_p:".256"},
+  {brain:"Kaufmann",epi:"Wu",k:16,beta:0.0192,ci_lb:-0.0189,ci_ub:0.0572,p:".324",pFDR:".580",sig:0,age_b:0.0014,age_p:".727"},
+  {brain:"Kaufmann",epi:"ZhangBLUP",k:16,beta:0.0104,ci_lb:-0.0283,ci_ub:0.049,p:".599",pFDR:".789",sig:0,age_b:-0.0036,age_p:".368"},
+  {brain:"Kaufmann",epi:"ZhangEN",k:16,beta:0.0196,ci_lb:-0.0177,ci_ub:0.0569,p:".303",pFDR:".573",sig:0,age_b:-0.0034,age_p:".397"},
+  {brain:"PyBrainAge",epi:"AdaptAge",k:29,beta:0.0125,ci_lb:-0.0113,ci_ub:0.0363,p:".302",pFDR:".573",sig:0,age_b:0.0015,age_p:".649"},
+  {brain:"PyBrainAge",epi:"AltumAge",k:29,beta:0.0317,ci_lb:0.0081,ci_ub:0.0552,p:".008",pFDR:".081",sig:0,age_b:-0.0027,age_p:".371"},
+  {brain:"PyBrainAge",epi:"cAge",k:28,beta:0.0251,ci_lb:0.0013,ci_ub:0.049,p:".039",pFDR:".170",sig:0,age_b:-0.0014,age_p:".669"},
+  {brain:"PyBrainAge",epi:"CorticalClock",k:29,beta:0.0156,ci_lb:-0.0076,ci_ub:0.0387,p:".187",pFDR:".431",sig:0,age_b:-0.0007,age_p:".822"},
+  {brain:"PyBrainAge",epi:"DamAge",k:29,beta:0.0149,ci_lb:-0.0086,ci_ub:0.0384,p:".215",pFDR:".465",sig:0,age_b:-0.0036,age_p:".272"},
+  {brain:"PyBrainAge",epi:"DNAmTL",k:12,beta:0.0438,ci_lb:0.0051,ci_ub:0.0826,p:".027",pFDR:".130",sig:0,age_b:0.0028,age_p:".500"},
+  {brain:"PyBrainAge",epi:"DunedinPACE",k:25,beta:0.0113,ci_lb:-0.013,ci_ub:0.0356,p:".361",pFDR:".605",sig:0,age_b:-0.005,age_p:".176"},
+  {brain:"PyBrainAge",epi:"Hannum",k:26,beta:-0.0283,ci_lb:-0.0526,ci_ub:-0.004,p:".022",pFDR:".117",sig:0,age_b:0.0006,age_p:".849"},
+  {brain:"PyBrainAge",epi:"Horvath2013",k:29,beta:0.0087,ci_lb:-0.0141,ci_ub:0.0315,p:".454",pFDR:".676",sig:0,age_b:-0.0032,age_p:".301"},
+  {brain:"PyBrainAge",epi:"PCBrainAge",k:29,beta:0.02,ci_lb:-0.0039,ci_ub:0.0439,p:".101",pFDR:".273",sig:0,age_b:0.0061,age_p:".069"},
+  {brain:"PyBrainAge",epi:"PCGrimAge",k:29,beta:0.0079,ci_lb:-0.0163,ci_ub:0.032,p:".523",pFDR:".725",sig:0,age_b:-0.0003,age_p:".931"},
+  {brain:"PyBrainAge",epi:"PedBE",k:25,beta:0.0124,ci_lb:-0.0126,ci_ub:0.0373,p:".331",pFDR:".580",sig:0,age_b:0.0005,age_p:".885"},
+  {brain:"PyBrainAge",epi:"PhenoAge",k:26,beta:0.007,ci_lb:-0.0177,ci_ub:0.0317,p:".578",pFDR:".778",sig:0,age_b:0.0014,age_p:".681"},
+  {brain:"PyBrainAge",epi:"skinHorvath",k:26,beta:0.0369,ci_lb:0.0125,ci_ub:0.0614,p:".003",pFDR:".038",sig:1,age_b:-0.0001,age_p:".964"},
+  {brain:"PyBrainAge",epi:"Wu",k:26,beta:0.0302,ci_lb:0.0058,ci_ub:0.0547,p:".015",pFDR:".095",sig:0,age_b:0.0032,age_p:".350"},
+  {brain:"PyBrainAge",epi:"ZhangBLUP",k:26,beta:0.0156,ci_lb:-0.0081,ci_ub:0.0392,p:".197",pFDR:".447",sig:0,age_b:-0.0001,age_p:".969"},
+  {brain:"PyBrainAge",epi:"ZhangEN",k:26,beta:0.0079,ci_lb:-0.0166,ci_ub:0.0324,p:".528",pFDR:".725",sig:0,age_b:-0.0016,age_p:".638"},
+  {brain:"Pyment",epi:"AdaptAge",k:26,beta:0.0226,ci_lb:-0.0031,ci_ub:0.0482,p:".085",pFDR:".257",sig:0,age_b:0.0033,age_p:".390"},
+  {brain:"Pyment",epi:"AltumAge",k:26,beta:0.0438,ci_lb:0.0179,ci_ub:0.0697,p:".001",pFDR:".019",sig:1,age_b:-0.0006,age_p:".864"},
+  {brain:"Pyment",epi:"cAge",k:25,beta:0.0228,ci_lb:-0.0024,ci_ub:0.048,p:".077",pFDR:".245",sig:0,age_b:-0.0003,age_p:".937"},
+  {brain:"Pyment",epi:"CorticalClock",k:26,beta:0.0245,ci_lb:-0.0005,ci_ub:0.0495,p:".055",pFDR:".209",sig:0,age_b:-0.001,age_p:".796"},
+  {brain:"Pyment",epi:"DamAge",k:26,beta:-0.0042,ci_lb:-0.0294,ci_ub:0.0211,p:".748",pFDR:".908",sig:0,age_b:0.0006,age_p:".870"},
+  {brain:"Pyment",epi:"DNAmTL",k:12,beta:0.0004,ci_lb:-0.0381,ci_ub:0.0389,p:".984",pFDR:".986",sig:0,age_b:0.0064,age_p:".142"},
+  {brain:"Pyment",epi:"DunedinPACE",k:22,beta:0.0141,ci_lb:-0.0122,ci_ub:0.0403,p:".295",pFDR:".573",sig:0,age_b:0.0004,age_p:".931"},
+  {brain:"Pyment",epi:"Hannum",k:26,beta:-0.0161,ci_lb:-0.0413,ci_ub:0.0091,p:".210",pFDR:".461",sig:0,age_b:0.0019,age_p:".603"},
+  {brain:"Pyment",epi:"Horvath2013",k:26,beta:0.0429,ci_lb:0.0169,ci_ub:0.069,p:".001",pFDR:".019",sig:1,age_b:0.0006,age_p:".873"},
+  {brain:"Pyment",epi:"PCBrainAge",k:26,beta:0.0344,ci_lb:0.007,ci_ub:0.0617,p:".014",pFDR:".095",sig:0,age_b:0.0039,age_p:".324"},
+  {brain:"Pyment",epi:"PCGrimAge",k:26,beta:0.0041,ci_lb:-0.0227,ci_ub:0.0309,p:".764",pFDR:".919",sig:0,age_b:0.0035,age_p:".378"},
+  {brain:"Pyment",epi:"PedBE",k:25,beta:0.0368,ci_lb:0.0114,ci_ub:0.0623,p:".005",pFDR:".048",sig:1,age_b:-0.0009,age_p:".818"},
+  {brain:"Pyment",epi:"PhenoAge",k:26,beta:-0.0058,ci_lb:-0.0314,ci_ub:0.0198,p:".655",pFDR:".817",sig:0,age_b:0.0044,age_p:".257"},
+  {brain:"Pyment",epi:"skinHorvath",k:26,beta:0.0276,ci_lb:0.0018,ci_ub:0.0534,p:".036",pFDR:".163",sig:0,age_b:0.0007,age_p:".853"},
+  {brain:"Pyment",epi:"Wu",k:26,beta:0.0002,ci_lb:-0.0243,ci_ub:0.0247,p:".986",pFDR:".986",sig:0,age_b:0.0039,age_p:".298"},
+  {brain:"Pyment",epi:"ZhangBLUP",k:26,beta:-0.001,ci_lb:-0.026,ci_ub:0.024,p:".937",pFDR:".984",sig:0,age_b:0.0031,age_p:".387"},
+  {brain:"Pyment",epi:"ZhangEN",k:26,beta:-0.0085,ci_lb:-0.0342,ci_ub:0.0172,p:".515",pFDR:".722",sig:0,age_b:-0.004,age_p:".282"}
   ]
 };
 
 const EPI_COLS = [
-  {key:'model', label:'Model', sortable:true},
-  {key:'tissue', label:'Tissue', sortable:true},
-  {key:'array', label:'Array', sortable:true},
-  {key:'age_range', label:'Training age range', sortable:false},
-  {key:'gen', label:'Generation', sortable:true},
-  {key:'ml', label:'ML method', sortable:false},
-  {key:'MAE', label:'MAE ↓', sortable:true},
-  {key:'wMAE', label:'wMAE ↓', sortable:true},
-  {key:'pearson', label:'Pearson r ↑', sortable:true},
-  {key:'N', label:'Total N', sortable:true}
+  {key:'model',    label:'Model',             sortable:true},
+  {key:'tissue',   label:'Tissue',            sortable:true},
+  {key:'array',    label:'Array',             sortable:true},
+  {key:'age_range',label:'Training age',      sortable:false},
+  {key:'gen',      label:'Generation',        sortable:true},
+  {key:'ml',       label:'ML method',         sortable:false},
+  {key:'k',        label:'k (studies)',       sortable:true},
+  {key:'wMAE',     label:'wMAE ↓ [95% CI]',  sortable:true},
+  {key:'pearson',  label:'Pearson r ↑ [95% CI]', sortable:true},
 ];
 const BRAIN_COLS = [
-  {key:'model', label:'Model', sortable:true},
-  {key:'ml_method', label:'ML method', sortable:false},
-  {key:'age_range', label:'Training age range', sortable:false},
-  {key:'MAE', label:'MAE ↓', sortable:true},
-  {key:'wMAE', label:'wMAE ↓', sortable:true},
-  {key:'pearson', label:'Pearson r ↑', sortable:true},
-  {key:'N', label:'Total N', sortable:true}
+  {key:'model',    label:'Model',             sortable:true},
+  {key:'ml_method',label:'ML method',         sortable:false},
+  {key:'age_range',label:'Training age',      sortable:false},
+  {key:'k',        label:'k (studies)',       sortable:true},
+  {key:'wMAE',     label:'wMAE ↓ [95% CI]',  sortable:true},
+  {key:'pearson',  label:'Pearson r ↑ [95% CI]', sortable:true},
+];
+const ASSOC_COLS = [
+  {key:'brain',  label:'Brain model',   sortable:true},
+  {key:'epi',    label:'Epi clock',     sortable:true},
+  {key:'k',      label:'k',             sortable:true},
+  {key:'beta',   label:'β [95% CI]',   sortable:true},
+  {key:'p',      label:'p',             sortable:false},
+  {key:'pFDR',   label:'pFDR',          sortable:true},
+  {key:'age_b',  label:'Age×β',         sortable:true},
+  {key:'age_p',  label:'Age×p',         sortable:false},
 ];
 
 let currentTab = 'epi';
-let sortCol = null;
-let sortDir = 1;
+let sortCol = null, sortDir = 1;
 
+// ── Rendering helpers ────────────────────────────────────────────────────────
 function tissueBadge(t) {
   if (!t) return '<span class="na">—</span>';
-  const cls = {blood:'tissue-blood',cortex:'tissue-cortex',buccal:'tissue-buccal',cord:'tissue-cord',multi:'tissue-multi'}[t] || '';
+  const cls = {blood:'tissue-blood',cortex:'tissue-cortex',buccal:'tissue-buccal',cord:'tissue-cord',multi:'tissue-multi'}[t]||'';
   return `<span class="badge ${cls}">${t}</span>`;
 }
 function genBadge(g) {
   if (!g) return '<span class="na">—</span>';
-  const cls = {'1st gen':'gen-1st','2nd gen':'gen-2nd','3rd gen':'gen-3rd','4th gen':'gen-4th','Gestational':'gen-gest'}[g] || '';
+  const cls = {'1st gen':'gen-1st','2nd gen':'gen-2nd','3rd gen':'gen-3rd','4th gen':'gen-4th','Gestational':'gen-gest'}[g]||'';
   return `<span class="badge ${cls}">${g}</span>`;
-}
-function pearsonBar(v, maxV) {
-  if (v === null || v === undefined) return '<span class="na">—</span>';
-  const w = Math.max(0, Math.min(1, v / maxV)) * 80;
-  return `<div class="perf-cell"><div class="perf-bar" style="width:${w}px"></div><span class="perf-val">${v.toFixed(3)}</span></div>`;
 }
 function ageRange(mn, mx) {
   if (mn === null && mx === null) return '<span class="na">—</span>';
-  const a = mn !== null ? mn : '?';
-  const b = mx !== null ? mx : '?';
-  return `${a} – ${b} yrs`;
+  const a = mn !== null ? mn : '?', b = mx !== null ? mx : '?';
+  return `${a}–${b} yrs`;
 }
-function wMAECell(v) {
-  if (v === null || v === undefined) return '<span class="na">—</span>';
-  return `<span class="perf-val">${v.toFixed(2)}</span>`;
+function perfCell(val, lb, ub, bar, maxV) {
+  if (val === null || val === undefined) return '<span class="na">—</span>';
+  const ci = (lb !== null && ub !== null) ? `<span class="ci">[${lb}–${ub}]</span>` : '';
+  if (bar) {
+    const w = Math.max(0, Math.min(1, val / maxV)) * 80;
+    return `<div class="perf-cell"><div class="perf-bar" style="width:${w}px"></div><span class="perf-val">${val.toFixed(3)}${ci}</span></div>`;
+  }
+  return `<span class="perf-val">${val.toFixed(2)}</span>${ci}`;
+}
+function betaCell(beta, lb, ub) {
+  if (beta === null || beta === undefined) return '<span class="na">—</span>';
+  const MAX = 0.08;
+  const pct = Math.min(1, Math.abs(beta) / MAX) * 50;
+  const cls = beta >= 0 ? 'pos' : 'neg';
+  const ci = (lb !== null && ub !== null) ? `<span class="ci">[${lb.toFixed(4)}, ${ub.toFixed(4)}]</span>` : '';
+  return `<div class="beta-cell">
+    <div class="beta-track"><div class="beta-bar ${cls}" style="width:${pct}%"></div></div>
+    <div><span class="beta-val">${beta >= 0 ? '+' : ''}${beta.toFixed(4)}</span>${ci}</div>
+  </div>`;
+}
+function pCell(p, pFDR) {
+  if (!p) return '<span class="na">—</span>';
+  const sigBadge = (pFDR && (pFDR.startsWith('<') || parseFloat('0'+pFDR) < 0.05))
+    ? '<span class="sig-badge">FDR*</span>' : '';
+  return p + sigBadge;
 }
 
+// ── Table head ───────────────────────────────────────────────────────────────
 function renderHead(cols) {
-  const head = document.getElementById('table-head');
-  head.innerHTML = '<tr>' + cols.map(c => {
+  document.getElementById('table-head').innerHTML = '<tr>' + cols.map(c => {
     const icon = c.sortable ? `<span class="sort-icon">${sortCol===c.key?(sortDir===1?'▲':'▼'):'⇅'}</span>` : '';
     const cls = sortCol === c.key ? 'sorted' : '';
     const onclick = c.sortable ? `onclick="sortBy('${c.key}')"` : '';
@@ -282,12 +475,13 @@ function renderHead(cols) {
   }).join('') + '</tr>';
 }
 
+// ── Table rows ───────────────────────────────────────────────────────────────
 function renderRows(rows) {
   const body = document.getElementById('table-body');
   const empty = document.getElementById('empty-msg');
-  if (!rows.length) { body.innerHTML = ''; empty.style.display = 'block'; return; }
+  if (!rows.length) { body.innerHTML = ''; empty.style.display='block'; return; }
   empty.style.display = 'none';
-  const maxP = 0.85;
+
   if (currentTab === 'epi') {
     body.innerHTML = rows.map(r => `<tr>
       <td class="model-name">${r.model}</td>
@@ -296,51 +490,72 @@ function renderRows(rows) {
       <td>${ageRange(r.age_min, r.age_max)}</td>
       <td>${genBadge(r.gen)}</td>
       <td style="color:var(--muted);font-size:12.5px">${r.ml||'—'}</td>
-      <td>${wMAECell(r.MAE)}</td>
-      <td>${wMAECell(r.wMAE)}</td>
-      <td>${pearsonBar(r.pearson, maxP)}</td>
-      <td style="color:var(--muted);font-size:12.5px">${r.N ? r.N.toLocaleString() : '—'}</td>
+      <td style="color:var(--muted)">${r.k??'—'}</td>
+      <td>${perfCell(r.wMAE, r.wMAE_lb, r.wMAE_ub, false, null)}</td>
+      <td>${perfCell(r.pearson, r.pearson_lb, r.pearson_ub, true, 0.85)}</td>
     </tr>`).join('');
-  } else {
+  } else if (currentTab === 'brain') {
     body.innerHTML = rows.map(r => `<tr>
       <td class="model-name">${r.model}</td>
       <td style="color:var(--muted);font-size:12.5px">${r.ml_method||'—'}</td>
       <td>${ageRange(r.age_min, r.age_max)}</td>
-      <td>${wMAECell(r.MAE)}</td>
-      <td>${wMAECell(r.wMAE)}</td>
-      <td>${pearsonBar(r.pearson, maxP)}</td>
-      <td style="color:var(--muted);font-size:12.5px">${r.N ? r.N.toLocaleString() : '—'}</td>
+      <td style="color:var(--muted)">${r.k??'—'}</td>
+      <td>${perfCell(r.wMAE, r.wMAE_lb, r.wMAE_ub, false, null)}</td>
+      <td>${perfCell(r.pearson, r.pearson_lb, r.pearson_ub, true, 0.4)}</td>
+    </tr>`).join('');
+  } else {
+    body.innerHTML = rows.map(r => `<tr class="${r.sig ? 'sig-row' : ''}">
+      <td class="model-name">${r.brain}</td>
+      <td style="color:var(--ink)">${r.epi}</td>
+      <td style="color:var(--muted)">${r.k}</td>
+      <td>${betaCell(r.beta, r.ci_lb, r.ci_ub)}</td>
+      <td style="font-variant-numeric:tabular-nums">${r.p||'—'}</td>
+      <td style="font-variant-numeric:tabular-nums">${pCell(r.pFDR, r.pFDR)}</td>
+      <td style="font-variant-numeric:tabular-nums;color:var(--muted)">${r.age_b !== null && r.age_b !== undefined ? (r.age_b >= 0 ? '+' : '') + r.age_b.toFixed(4) : '—'}</td>
+      <td style="font-variant-numeric:tabular-nums;color:var(--muted)">${r.age_p||'—'}</td>
     </tr>`).join('');
   }
 }
 
+// ── Filtering ────────────────────────────────────────────────────────────────
 function getFiltered() {
   const q = document.getElementById('search').value.toLowerCase();
-  const tissue = document.getElementById('filter-tissue')?.value || '';
-  const array = document.getElementById('filter-array')?.value || '';
-  const gen = document.getElementById('filter-gen')?.value || '';
-  const ageFrom = parseFloat(document.getElementById('age-from').value) || -Infinity;
-  const ageTo   = parseFloat(document.getElementById('age-to').value)   ||  Infinity;
-
   let rows = [...DATA[currentTab]];
-  if (q) rows = rows.filter(r => r.model.toLowerCase().includes(q));
+
   if (currentTab === 'epi') {
+    const tissue = document.getElementById('filter-tissue').value;
+    const array  = document.getElementById('filter-array').value;
+    const gen    = document.getElementById('filter-gen').value;
+    const ageFrom = parseFloat(document.getElementById('age-from').value) || -Infinity;
+    const ageTo   = parseFloat(document.getElementById('age-to').value)   ||  Infinity;
+    if (q)      rows = rows.filter(r => r.model.toLowerCase().includes(q));
     if (tissue) rows = rows.filter(r => r.tissue === tissue);
     if (array)  rows = rows.filter(r => r.array === array);
     if (gen)    rows = rows.filter(r => r.gen === gen);
+    rows = rows.filter(r => {
+      if (r.age_min === null && r.age_max === null) return true;
+      return (r.age_min??-Infinity) <= ageTo && (r.age_max??Infinity) >= ageFrom;
+    });
+  } else if (currentTab === 'brain') {
+    const ageFrom = parseFloat(document.getElementById('age-from').value) || -Infinity;
+    const ageTo   = parseFloat(document.getElementById('age-to').value)   ||  Infinity;
+    if (q) rows = rows.filter(r => r.model.toLowerCase().includes(q));
+    rows = rows.filter(r => (r.age_min??-Infinity) <= ageTo && (r.age_max??Infinity) >= ageFrom);
+  } else {
+    const brain = document.getElementById('filter-brain').value;
+    const epi   = document.getElementById('filter-epi').value;
+    const sigOnly = document.getElementById('filter-sig').checked;
+    if (q)     rows = rows.filter(r => r.brain.toLowerCase().includes(q) || r.epi.toLowerCase().includes(q));
+    if (brain) rows = rows.filter(r => r.brain === brain);
+    if (epi)   rows = rows.filter(r => r.epi === epi);
+    if (sigOnly) rows = rows.filter(r => r.sig === 1);
   }
-  // Age range: model must overlap with requested range
-  rows = rows.filter(r => {
-    if (r.age_min === null && r.age_max === null) return true;
-    const mn = r.age_min ?? -Infinity;
-    const mx = r.age_max ?? Infinity;
-    return mn <= ageTo && mx >= ageFrom;
-  });
+
   if (sortCol) {
     rows.sort((a,b) => {
       let av = a[sortCol], bv = b[sortCol];
-      if (av === null || av === undefined) av = sortDir === 1 ? Infinity : -Infinity;
-      if (bv === null || bv === undefined) bv = sortDir === 1 ? Infinity : -Infinity;
+      if (av === null || av === undefined) av = sortDir===1 ? Infinity : -Infinity;
+      if (bv === null || bv === undefined) bv = sortDir===1 ? Infinity : -Infinity;
       if (typeof av === 'string') return sortDir * av.localeCompare(bv);
       return sortDir * (av - bv);
     });
@@ -350,38 +565,55 @@ function getFiltered() {
 
 function applyFilters() {
   const rows = getFiltered();
-  const cols = currentTab === 'epi' ? EPI_COLS : BRAIN_COLS;
+  const cols = currentTab==='epi' ? EPI_COLS : currentTab==='brain' ? BRAIN_COLS : ASSOC_COLS;
   renderHead(cols);
   renderRows(rows);
   document.getElementById(`${currentTab}-count`).textContent = `(${rows.length})`;
 }
 
 function sortBy(col) {
-  if (sortCol === col) sortDir *= -1;
-  else { sortCol = col; sortDir = 1; }
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+  applyFilters();
+}
+
+function resetFilters() {
+  document.getElementById('search').value = '';
+  ['filter-tissue','filter-array','filter-gen','filter-brain','filter-epi']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['age-from','age-to'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  const sig = document.getElementById('filter-sig'); if(sig) sig.checked = false;
+  sortCol = null; sortDir = 1;
   applyFilters();
 }
 
 function switchTab(tab) {
   currentTab = tab;
   sortCol = null; sortDir = 1;
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['epi','brain'][i] === tab));
-  document.getElementById('epi-controls').style.display = tab === 'epi' ? 'contents' : 'none';
-  applyFilters();
-}
-
-function resetFilters() {
-  document.getElementById('search').value = '';
-  ['filter-tissue','filter-array','filter-gen'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-  document.getElementById('age-from').value = '';
-  document.getElementById('age-to').value = '';
-  sortCol = null; sortDir = 1;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['epi','brain','assoc'][i]===tab));
+  document.getElementById('epi-controls').style.display  = tab==='epi'   ? '' : 'none';
+  document.getElementById('age-filter-wrap').style.display = tab==='assoc' ? 'none' : '';
+  document.getElementById('assoc-controls').style.display = tab==='assoc' ? '' : 'none';
+  // Update info box
+  const info = document.getElementById('info-box');
+  if (tab === 'assoc') {
+    info.innerHTML = 'Meta-analytical associations between Brain-PAR and Epigenetic-PAR across MIND Consortium cohorts. '
+      + '<b>β</b> = standardised regression coefficient [95% CI]. <b>pFDR</b> = FDR-corrected p-value. '
+      + '<b>Age×β</b> = age moderation effect (slope per year). Highlighted rows are FDR-significant (p<sub>FDR</sub> &lt; .05). '
+      + '&nbsp;·&nbsp; <a href="https://epi-brain-dashboard.streamlit.app" target="_blank">Full interactive dashboard ↗</a>';
+  } else {
+    info.innerHTML = 'Performance metrics from random-effects meta-analysis across MIND Consortium cohorts (Staginnus, Baltramonaityte et al., 2026). '
+      + '<b>wMAE</b> = age-weighted mean absolute error [95% CI]; in years for postnatal clocks, weeks for gestational clocks. '
+      + '<b>Pearson r</b> = correlation between predicted and chronological/gestational age [95% CI]. '
+      + 'DunedinPACE, DNAmTL, DunedinPACNI: wMAE not applicable. '
+      + '&nbsp;·&nbsp; <a href="https://epi-brain-dashboard.streamlit.app" target="_blank">Full interactive dashboard ↗</a>';
+  }
   applyFilters();
 }
 
 // Init
-document.getElementById('epi-count').textContent = `(${DATA.epi.length})`;
-document.getElementById('brain-count').textContent = `(${DATA.brain.length})`;
+document.getElementById('epi-count').textContent   = `(${DATA.epi.length})`;
+document.getElementById('brain-count').textContent  = `(${DATA.brain.length})`;
+document.getElementById('assoc-count').textContent  = `(${DATA.assoc.length})`;
 switchTab('epi');
 </script>
 </body>
