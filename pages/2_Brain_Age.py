@@ -12,7 +12,7 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 
-from ui_helpers import render_sidebar_logo, render_footer
+from ui_helpers import render_sidebar_logo, render_footer, download_csv_button
 from plot_helpers import (
     COHORT_PALETTE, BRAIN_MODEL_PALETTE,
     BRAIN_BIN5_LEVELS, _bin_brain5, BRAIN_GEN_BRAINAGE, BRAIN_GEN_NEXTGEN,
@@ -618,6 +618,7 @@ with tab_3a:
     order_3b = ["Pooled"] + _B_NEXTGEN + _B_GEN1[::-1]
 
     if pub_metric == "wMAE_test":
+        _dl_raw, _dl_meta = brain_sub, brain_wmae_mw
         fig_3ab = forest_plot_plotly(
             raw_df=brain_sub,
             meta_df=brain_wmae_mw,
@@ -637,6 +638,7 @@ with tab_3a:
             row_height=50,
         )
     elif pub_metric == "MAE":
+        _dl_raw, _dl_meta = brain_sub, brain_mae_mw
         fig_3ab = forest_plot_plotly(
             raw_df=brain_sub,
             meta_df=brain_mae_mw,
@@ -656,6 +658,7 @@ with tab_3a:
             row_height=50,
         )
     elif pub_metric == "R2":
+        _dl_raw, _dl_meta = brain_sub, brain_r2_mw
         fig_3ab = forest_plot_plotly(
             raw_df=brain_sub,
             meta_df=brain_r2_mw,
@@ -675,6 +678,7 @@ with tab_3a:
             row_height=50,
         )
     else:  # Pearson
+        _dl_raw, _dl_meta = brain_full, brain_pearson_mw
         fig_3ab = forest_plot_plotly(
             raw_df=brain_full,
             meta_df=brain_pearson_mw,
@@ -710,6 +714,13 @@ with tab_3a:
         st.caption("Pooled estimates from multilevel random-effects meta-analysis (rma.mv, REML; metafor R package).")
     else:
         st.caption("Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate; applied to filtered subset).")
+    _btn_area, _ = st.columns([3, 2])
+    with _btn_area:
+        _btn1, _btn2 = st.columns(2, gap="small")
+        with _btn1:
+            download_csv_button(_dl_raw,  f"fig3ab_{pub_metric}_cohort_data.csv",     "⬇ Download summary data",      key=f"dl_3a_raw_{pub_metric}", use_container_width=True)
+        with _btn2:
+            download_csv_button(_dl_meta, f"fig3ab_{pub_metric}_pooled_estimates.csv", "⬇ Pooled estimates", key=f"dl_3a_meta_{pub_metric}", use_container_width=True)
 
 # ── Fig 3C ────────────────────────────────────────────────────────────────────
 with tab_3c:
@@ -734,6 +745,7 @@ with tab_3c:
         marker_size=8,
     )
     st.plotly_chart(fig_3c, use_container_width=True)
+    download_csv_button(_df_c, f"fig3c_{pub_metric}_data.csv", key=f"dl_3c_{pub_metric}")
 
 # ── Fig 3D ────────────────────────────────────────────────────────────────────
 with tab_3d:
@@ -808,5 +820,6 @@ with tab_3d:
         _col3d, _ = st.columns([2, 1])
         with _col3d:
             st.plotly_chart(fig_3d, use_container_width=True)
+        download_csv_button(_brain_slope_df, "fig3d_age_slopes.csv", key="dl_3d")
 
 render_footer()

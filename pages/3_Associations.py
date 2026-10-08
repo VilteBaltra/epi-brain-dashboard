@@ -9,7 +9,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from ui_helpers import render_sidebar_logo, render_footer
+from ui_helpers import render_sidebar_logo, render_footer, download_csv_button
 from plot_helpers import (
     COHORT_PALETTE, KELLY_COLORS,
     BRAIN_BIN5_LEVELS, _bin_brain5,
@@ -481,7 +481,7 @@ def _make_chord_fig(pm, brain_models, epi_models):
 
 tab_4a, tab_4b, tab_4c = st.tabs([
     "Fig 4A — Associations by model pair",
-    "Fig 4B — Association structure (chord)",
+    "Fig 4B — Association heatmap",
     "Fig 4C — Associations by age group",
 ])
 
@@ -708,26 +708,22 @@ with tab_4a:
         st.caption("Pooled estimates from multilevel random-effects meta-analysis (rma.mv, REML; metafor R package).")
     else:
         st.caption("Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate; applied to filtered subset).")
+    download_csv_button(filtered, "fig4a_association_data.csv", key="dl_4a")
 
 
 # ── Fig 4B ────────────────────────────────────────────────────────────────────
 with tab_4b:
-    st.subheader("Chord diagram of Brain-PAR – Epi-PAR association strength across model combinations")
+    st.subheader("Heatmap of Brain-PAR – Epi-PAR pooled associations across model combinations")
     st.caption(
-        "Chord diagram of Brain-PAR – Epi-PAR pooled associations. "
-        "Upper arc = brain models (coloured segments); lower arc = epi clocks. "
-        "Chord width ∝ |β|; blue = positive β, salmon = negative β. "
-        "Hover over a chord for exact values."
+        "Each cell shows the pooled β for one brain model × epi clock combination. "
+        "Colour scale is symmetric around 0 (red = positive, blue = negative). "
+        "Hover for exact β, 95% CI and number of cohorts (k)."
     )
 
-    # ── Model order matches the R paper figure ─────────────────────────────
-    # Brain: Pyment → ENIGMA → Kaufmann → DBN → DunedinPACNI → DevBrainAge
-    #         → PyBrainAge → Centile2  (upper-right arc, CCW through top to upper-left)
     _BRAIN_ORDER_4B = [
         "Pyment", "ENIGMA", "Kaufmann", "DBN",
         "DunedinPACNI", "DevBrainAge", "PyBrainAge", "Centile2",
     ]
-    # Epi: DunedinPACE → … → DNAmTL  (lower-left arc, CCW through bottom to lower-right)
     _EPI_ORDER_4B = [
         "DunedinPACE", "PCGrimAge", "PCBrainAge", "CorticalClock",
         "AltumAge", "skinHorvath", "DamAge", "ZhangBLUP",
@@ -738,7 +734,6 @@ with tab_4b:
     _present_b = set(plot_est.loc[plot_est["brain_model"] != "Pooled", "brain_model"].dropna())
     _present_e = set(plot_est.loc[plot_est["epi_model"]   != "Pooled", "epi_model"].dropna())
 
-    # Ordered lists filtered to models actually present; append any extras at end
     _brain_4b = [m for m in _BRAIN_ORDER_4B if m in _present_b]
     _brain_4b += [m for m in sorted(_present_b) if m not in set(_BRAIN_ORDER_4B)]
     _epi_4b   = [m for m in _EPI_ORDER_4B   if m in _present_e]
@@ -749,7 +744,9 @@ with tab_4b:
         (plot_est["epi_model"]   != "Pooled")
     ].copy()
 
-    # Apply Focus-on filter
+    # Full-dataset abs_max for fixed colour scale toggle
+    _abs_max_full = float(_pm_4b["pooled_beta"].abs().max())
+
     if _focus_type == "One brain model" and _sel_brain:
         _pm_4b    = _pm_4b[_pm_4b["brain_model"] == _sel_brain]
         _brain_4b = [m for m in _brain_4b if m == _sel_brain]
@@ -757,12 +754,166 @@ with tab_4b:
         _pm_4b  = _pm_4b[_pm_4b["epi_model"] == _sel_epi]
         _epi_4b = [m for m in _epi_4b if m == _sel_epi]
 
-    fig_4b = _make_chord_fig(_pm_4b, _brain_4b, _epi_4b)
+    # ── Pivot to matrix ────────────────────────────────────────────────────
+    _hm_z  = _pm_4b.pivot_table(index="brain_model", columns="epi_model", values="pooled_beta", aggfunc="first")
+    _hm_lb = _pm_4b.pivot_table(index="brain_model", columns="epi_model", values="ci_lb",       aggfunc="first")
+    _hm_ub = _pm_4b.pivot_table(index="brain_model", columns="epi_model", values="ci_ub",       aggfunc="first")
+
+    _br_ord = [m for m in _brain_4b if m in _hm_z.index]
+    _ep_ord = [m for m in _epi_4b   if m in _hm_z.columns]
+    _hm_z  = _hm_z.reindex(index=_br_ord,  columns=_ep_ord)
+    _hm_lb = _hm_lb.reindex(index=_br_ord, columns=_ep_ord)
+    _hm_ub = _hm_ub.reindex(index=_br_ord, columns=_ep_ord)
+
+    # ── Hierarchical clustering (skip if too few rows/cols or all-NaN) ─────
+    from scipy.cluster.hierarchy import linkage, leaves_list
+    from scipy.spatial.distance import pdist
+
+    _z_filled = _hm_z.fillna(0).values
+
+    if _z_filled.shape[0] > 1:
+        try:
+            _row_order = leaves_list(linkage(pdist(_z_filled,   metric="correlation"), method="average"))
+            _br_ord = [_br_ord[i] for i in _row_order]
+        except Exception:
+            pass  # fall back to manual order
+
+    if _z_filled.shape[1] > 1:
+        try:
+            _col_order = leaves_list(linkage(pdist(_z_filled.T, metric="correlation"), method="average"))
+            _ep_ord = [_ep_ord[i] for i in _col_order]
+        except Exception:
+            pass
+
+    # Reindex to clustered order
+    _hm_z  = _hm_z.reindex(index=_br_ord,  columns=_ep_ord)
+    _hm_lb = _hm_lb.reindex(index=_br_ord, columns=_ep_ord)
+    _hm_ub = _hm_ub.reindex(index=_br_ord, columns=_ep_ord)
+
+    _abs_max_dynamic = float(np.nanmax(np.abs(_hm_z.values))) if not _hm_z.empty else 1.0
+
+    # ── Colour scale toggle ────────────────────────────────────────────────
+    _tog_col1, _tog_col2 = st.columns([3, 2])
+    _use_fixed_scale = _tog_col1.toggle(
+        "Fixed colour scale (β range: −1 to +1)",
+        value=False,
+        key="toggle_4b_scale",
+        help="Off: colour scale adapts to the current filtered data (highlights relative differences). On: fixed to the full β range (−1 to +1) — small absolute effects appear pale regardless of filtering.",
+    )
+    _abs_max = 1.0 if _use_fixed_scale else _abs_max_dynamic
+
+    _cd = np.stack([_hm_lb.values, _hm_ub.values], axis=-1)
+
+    # ── Derive p-values from 95% CI (z-score method) and apply BH FDR ────
+    import math
+
+    _se_vals = (_hm_ub.values - _hm_lb.values) / 3.92   # SE = CI_width / (2*1.96)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        _z_vals = np.where(_se_vals > 0, _hm_z.values / _se_vals, np.nan)
+
+    # Two-tailed p from complementary error function (no scipy needed)
+    _p_flat = np.array([
+        math.erfc(abs(float(z)) / math.sqrt(2)) if np.isfinite(z) else np.nan
+        for z in _z_vals.flatten()
+    ])
+
+    # Benjamini-Hochberg FDR correction
+    def _bh_fdr(pvals, alpha=0.05):
+        result = np.zeros(len(pvals), dtype=bool)
+        finite_idx = np.where(np.isfinite(pvals))[0]
+        if len(finite_idx) == 0:
+            return result
+        n = len(finite_idx)
+        order = np.argsort(pvals[finite_idx])
+        sorted_p = pvals[finite_idx][order]
+        thresholds = (np.arange(1, n + 1) / n) * alpha
+        below = sorted_p <= thresholds
+        if below.any():
+            result[finite_idx[order[:np.where(below)[0].max() + 1]]] = True
+        return result
+
+    _fdr_sig_flat = _bh_fdr(_p_flat)
+    _fdr_sig = _fdr_sig_flat.reshape(_hm_z.shape)
+
+    # ── FDR toggle ──────────────────────────────────────────────────────────
+    _use_fdr = st.toggle(
+        "FDR-corrected only (Benjamini-Hochberg, p_FDR < 0.05)",
+        value=False,
+        key="toggle_4b_fdr",
+        help="Grey cells = not significant after FDR correction. P-values derived from 95% CI via z-score method.",
+    )
+
+    # Significance criterion: FDR when toggle on, else CI excludes zero
+    _sig_ci = (_hm_lb.values > 0) | (_hm_ub.values < 0)
+    _sig    = _fdr_sig if _use_fdr else _sig_ci
+
+    _sig_rows, _sig_cols = np.where(_sig)
+    _dot_x = [_ep_ord[c] for c in _sig_cols]
+    _dot_y = [_br_ord[r] for r in _sig_rows]
+
+    fig_4b = go.Figure()
+
+    fig_4b.add_trace(go.Heatmap(
+        z=_hm_z.values,
+        x=_ep_ord,
+        y=_br_ord,
+        customdata=_cd,
+        colorscale="RdBu_r",
+        zmid=0,
+        zmin=-_abs_max,
+        zmax=_abs_max,
+        colorbar=dict(title="β", thickness=14, len=0.8),
+        hovertemplate=(
+            "<b>Brain:</b> %{y}<br>"
+            "<b>Epi:</b> %{x}<br>"
+            "<b>β</b> = %{z:.3f} [%{customdata[0]:.3f}, %{customdata[1]:.3f}]<extra></extra>"
+        ),
+    ))
+
+    # Grey overlay for non-FDR-significant cells (only when toggle is on)
+    if _use_fdr:
+        _grey = np.where(~_fdr_sig, 1.0, np.nan)
+        fig_4b.add_trace(go.Heatmap(
+            z=_grey,
+            x=_ep_ord,
+            y=_br_ord,
+            colorscale=[[0, "rgba(190,190,190,0.60)"], [1, "rgba(190,190,190,0.60)"]],
+            showscale=False,
+            zmin=0, zmax=1,
+            hoverinfo="skip",
+        ))
+
+    # Significance dots (black circle)
+    if _dot_x:
+        fig_4b.add_trace(go.Scatter(
+            x=_dot_x,
+            y=_dot_y,
+            mode="markers",
+            marker=dict(symbol="circle", size=5, color="black", opacity=0.75),
+            hoverinfo="skip",
+            showlegend=False,
+        ))
+
+    fig_4b.update_layout(
+        height=max(320, 52 * len(_br_ord)),
+        margin=dict(l=120, r=60, t=20, b=180),
+        xaxis=dict(tickangle=-45, side="bottom", title="Epigenetic clock"),
+        yaxis=dict(autorange="reversed", title="Brain age model"),
+    )
+
     st.plotly_chart(fig_4b, use_container_width=True)
-    if len(filtered) == len(df):
-        st.caption("Pooled estimates from multilevel random-effects meta-analysis (rma.mv, REML; metafor R package).")
-    else:
-        st.caption("Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate; applied to filtered subset).")
+    _meta_note = (
+        "Pooled estimates from multilevel random-effects meta-analysis (rma.mv, REML; metafor R package)."
+        if len(filtered) == len(df) else
+        "Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate; applied to filtered subset)."
+    )
+    _sig_note = (
+        "Black dots = FDR-significant (BH p_FDR < 0.05); grey cells = not significant. P-values derived from 95% CI via z-score."
+        if _use_fdr else
+        "Black dots = 95% CI excludes zero."
+    )
+    st.caption(f"{_meta_note} {_sig_note}")
+    download_csv_button(_pm_4b, "fig4b_heatmap_pooled_estimates.csv", key="dl_4b")
 
 
 # ── Fig 4C ────────────────────────────────────────────────────────────────────
@@ -936,5 +1087,6 @@ with tab_4c:
     )
 
     st.plotly_chart(fig_4c, use_container_width=True)
+    download_csv_button(filtered, "fig4c_association_data.csv", key="dl_4c")
 
 render_footer()

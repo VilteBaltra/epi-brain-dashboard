@@ -8,7 +8,7 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 
-from ui_helpers import render_sidebar_logo, render_footer
+from ui_helpers import render_sidebar_logo, render_footer, download_csv_button
 from plot_helpers import (
     COHORT_PALETTE, EPI_MODEL_PALETTE, RENAME,
     BIN7_LEVELS, _bin7, GEN1, GEN1_GEST, GEN2_4,
@@ -74,17 +74,33 @@ _bin_display = [b.replace("\n", " ") for b in BIN7_LEVELS]
 _display_to_bin = dict(zip(_bin_display, BIN7_LEVELS))
 _all_models  = list(df["model"].dropna().unique())
 
+# ── Model-level metadata for new filters ──────────────────────────────────
+_model_meta  = df.groupby("model")[["tissue_training","array","training_age_min_epi","training_age_max_epi"]].first()
+_all_tissues = sorted(df["tissue_training"].dropna().unique())
+_all_arrays  = sorted(df["array"].dropna().unique())
+_train_age_abs_min = -1
+_train_age_abs_max = int(df["training_age_max_epi"].max())
+
 if "epi_cohort" not in st.session_state:
     st.session_state["epi_cohort"] = _all_cohorts
 if "epi_age" not in st.session_state:
     st.session_state["epi_age"]    = _bin_display
 if "epi_model" not in st.session_state:
     st.session_state["epi_model"]  = _all_models
+if "epi_tissue" not in st.session_state:
+    st.session_state["epi_tissue"] = _all_tissues
+if "epi_array" not in st.session_state:
+    st.session_state["epi_array"]  = _all_arrays
+if "epi_train_age" not in st.session_state:
+    st.session_state["epi_train_age"] = (_train_age_abs_min, _train_age_abs_max)
 
 if st.sidebar.button("↺ Reset filters"):
-    st.session_state["epi_cohort"] = _all_cohorts
-    st.session_state["epi_age"]    = _bin_display
-    st.session_state["epi_model"]  = _all_models
+    st.session_state["epi_cohort"]    = _all_cohorts
+    st.session_state["epi_age"]       = _bin_display
+    st.session_state["epi_model"]     = _all_models
+    st.session_state["epi_tissue"]    = _all_tissues
+    st.session_state["epi_array"]     = _all_arrays
+    st.session_state["epi_train_age"] = (_train_age_abs_min, _train_age_abs_max)
 
 st.sidebar.markdown("**Cohort**")
 _c1, _c2 = st.sidebar.columns(2)
@@ -111,10 +127,50 @@ if _m2.button("Clear", key="epi_model_clear"):
     st.session_state["epi_model"] = []
 model_f = st.sidebar.multiselect("Model", _all_models, key="epi_model", label_visibility="collapsed")
 
+st.sidebar.markdown("**Training tissue**")
+_tt1, _tt2 = st.sidebar.columns(2)
+if _tt1.button("Select all", key="epi_tissue_all"):
+    st.session_state["epi_tissue"] = _all_tissues
+if _tt2.button("Clear", key="epi_tissue_clear"):
+    st.session_state["epi_tissue"] = []
+tissue_f = st.sidebar.multiselect("Training tissue", _all_tissues, key="epi_tissue", label_visibility="collapsed")
+
+st.sidebar.markdown("**Training array**")
+_ar1, _ar2 = st.sidebar.columns(2)
+if _ar1.button("Select all", key="epi_array_all"):
+    st.session_state["epi_array"] = _all_arrays
+if _ar2.button("Clear", key="epi_array_clear"):
+    st.session_state["epi_array"] = []
+array_f = st.sidebar.multiselect("Training array", _all_arrays, key="epi_array", label_visibility="collapsed")
+
+st.sidebar.markdown("**Training age range (years)**")
+train_age_f = st.sidebar.slider(
+    "Training age range",
+    min_value=_train_age_abs_min,
+    max_value=_train_age_abs_max,
+    key="epi_train_age",
+    label_visibility="collapsed",
+    help="Keep models whose training age range overlaps this window. Models with unknown training age are always included.",
+)
+
+# ── Filter models by tissue / array / training age ────────────────────────
+_meta_f = _model_meta.copy()
+if tissue_f is not None:
+    _meta_f = _meta_f[_meta_f["tissue_training"].isna() | _meta_f["tissue_training"].isin(tissue_f)]
+if array_f is not None:
+    _meta_f = _meta_f[_meta_f["array"].isna() | _meta_f["array"].isin(array_f)]
+_sel_tmin, _sel_tmax = train_age_f
+_age_ok = (
+    _meta_f["training_age_min_epi"].isna() | _meta_f["training_age_max_epi"].isna() |
+    ((_meta_f["training_age_min_epi"] <= _sel_tmax) & (_meta_f["training_age_max_epi"] >= _sel_tmin))
+)
+_meta_f = _meta_f[_age_ok]
+_models_passing = [m for m in model_f if m in _meta_f.index]
+
 filtered = df[
     (df["cohort"].isin(cohort_f)) &
     (df["age_bin"].isin(age_group_f)) &
-    (df["model"].isin(model_f))
+    (df["model"].isin(_models_passing))
 ].copy()
 
 c1, c2, c3, c4 = st.columns(4)
@@ -498,6 +554,7 @@ with tab_2a:
     _P_GEST     = ["Knight", "EPIC", "Bohlin"]
 
     if pub_metric == "wMAE_test":
+        _dl_raw, _dl_meta = epi_sub, _forest_wmae
         order_2a = ["Pooled"] + _A_NEXTGEN + _A_GEN1 + _A_GEST
         fig_2ab = forest_plot_plotly(
             raw_df=epi_sub,
@@ -523,6 +580,7 @@ with tab_2a:
             row_height=32,
         )
     elif pub_metric == "MAE":
+        _dl_raw, _dl_meta = epi_sub, epi_mae_mw
         order_2a = ["Pooled"] + _A_NEXTGEN + _A_GEN1 + _A_GEST
         fig_2ab = forest_plot_plotly(
             raw_df=epi_sub,
@@ -548,6 +606,7 @@ with tab_2a:
             row_height=32,
         )
     elif pub_metric == "R2":
+        _dl_raw, _dl_meta = epi_sub, epi_r2_mw
         order_2a = ["Pooled"] + _A_NEXTGEN + _A_GEN1 + _A_GEST
         fig_2ab = forest_plot_plotly(
             raw_df=epi_sub,
@@ -572,7 +631,8 @@ with tab_2a:
             marker_size=8,
             row_height=32,
         )
-    else:
+    else:  # Pearson
+        _dl_raw, _dl_meta = epi_pearson_df, _forest_pearson
         order_2b = ["Pooled"] + _P_NEXT_GEN + _P_GEN1 + _P_GEST
         div_ep2  = 0.5 + len(_P_NEXT_GEN)
         div_ep3  = 0.5 + len(_P_NEXT_GEN) + len(_P_GEN1)
@@ -611,6 +671,13 @@ with tab_2a:
         st.caption("Pooled estimates from DerSimonian-Laird random-effects meta-analysis — consistent with sidebar filters.")
     else:
         st.caption("Pooled estimates from multilevel random-effects meta-analysis (rma.mv, REML; metafor R package) — matches paper figures.")
+    _btn_area, _ = st.columns([3, 2])
+    with _btn_area:
+        _btn1, _btn2 = st.columns(2, gap="small")
+        with _btn1:
+            download_csv_button(_dl_raw,  f"fig2ab_{pub_metric}_cohort_data.csv",    "⬇ Download summary data",      key=f"dl_2a_raw_{pub_metric}", use_container_width=True)
+        with _btn2:
+            download_csv_button(_dl_meta, f"fig2ab_{pub_metric}_pooled_estimates.csv", "⬇ Pooled estimates", key=f"dl_2a_meta_{pub_metric}", use_container_width=True)
 
 # ── Fig 2C ────────────────────────────────────────────────────────────────────
 with tab_2c:
@@ -635,6 +702,7 @@ with tab_2c:
         marker_size=8,
     )
     st.plotly_chart(fig_2c, use_container_width=True)
+    download_csv_button(_df_c, f"fig2c_{pub_metric}_data.csv", key=f"dl_2c_{pub_metric}")
 
 # ── Fig 2D ────────────────────────────────────────────────────────────────────
 with tab_2d:
@@ -710,5 +778,6 @@ with tab_2d:
         _col2d, _ = st.columns([2, 1])
         with _col2d:
             st.plotly_chart(fig_2d, use_container_width=True)
+        download_csv_button(_epi_slope_df, "fig2d_age_slopes.csv", key="dl_2d")
 
 render_footer()

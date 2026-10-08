@@ -30,6 +30,14 @@ st.markdown(
 )
 st.info("💡 Use the sidebar filters (cohort, age group, model) to interactively update all figures across pages.", icon=None)
 
+st.markdown(
+    "🔍 Looking for a quick overview of available models? "
+    "Browse the **[lightweight model database](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html)** "
+    "— a static, searchable table of all epigenetic and brain age models with key metadata and pooled performance, "
+    "filterable by tissue, array, training age range, and generation. No app required.",
+    unsafe_allow_html=True,
+)
+
 st.divider()
 
 # ── STUDY SCOPE ───────────────────────────────────────────────────────────────

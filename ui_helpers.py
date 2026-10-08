@@ -34,5 +34,11 @@ def render_sidebar_logo():
             unsafe_allow_html=True,
         )
 
+def download_csv_button(df, filename: str, label: str = "⬇ Download summary data (.csv)", key: str = None, use_container_width: bool = False):
+    """Render a small CSV download button for the given dataframe."""
+    import pandas as pd
+    csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button(label=label, data=csv, file_name=filename, mime="text/csv", key=key, use_container_width=use_container_width)
+
 def render_footer():
     st.markdown(_FOOTER_HTML, unsafe_allow_html=True)

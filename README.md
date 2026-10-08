@@ -6,6 +6,8 @@ Interactive dashboard accompanying the paper:
 > Staginnus, Baltramonaityte, Schuurmans et al. (2026, in preparation)
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://epi-brain-age-dashboard.streamlit.app/)
+&nbsp;&nbsp;
+[![Model database](https://img.shields.io/badge/Model_database-static_HTML-6b7c5e?style=flat)](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html)
 
 ---
 
@@ -13,12 +15,15 @@ Interactive dashboard accompanying the paper:
 
 This dashboard allows interactive exploration of epigenetic and brain age model performance and their associations across development (birth–24 years), based on data from 15 cohorts and over 21,000 samples from the MIND Consortium.
 
+A **lightweight, static model database** is also available for researchers who want to quickly identify models appropriate for developmental studies without running the full Streamlit app:
+👉 [Model database (searchable HTML)](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html)
+
 **Pages:**
 
 - **Home** — study scope, cohort map, and model descriptions
 - **Brain Age** — performance metrics (MAE, R², Pearson r) and publication figures for 8 brain age models
 - **Epigenetic Age** — performance metrics and publication figures for 20 epigenetic clocks
-- **Associations** — Brain-PAR × Epi-PAR associations across model combinations, age groups, and a chord diagram of association structure
+- **Associations** — Brain-PAR × Epi-PAR associations across model combinations, age groups, and a clustered heatmap of association structure
 
 All figures respond to sidebar filters (cohort, model, age group).
 
@@ -73,6 +78,7 @@ Requires Python 3.9+.
 │   ├── 2_Epigenetic_Age.py
 │   └── 3_Associations.py
 ├── data/                        # Summary statistics (no individual-level data)
+├── model_database.html          # Lightweight static model browser (no server needed)
 ├── plot_helpers.py              # Shared plotting functions
 ├── requirements.txt
 ├── CITATION.cff

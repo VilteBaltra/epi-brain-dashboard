@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biological Age Model Database</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink:    #28261f;
+      --text:   #4a4740;
+      --muted:  #7a776e;
+      --light:  #a8a59c;
+      --border: #e8e4dc;
+      --bg:     #faf9f6;
+      --card:   #f5f2ec;
+      --white:  #ffffff;
+      --sage:       #6b7c5e;
+      --sage-light: #f0f2ec;
+      --sage-mid:   #c8d0be;
+      --amber:      #92600a;
+      --amber-light:#fdf3e0;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; color: var(--text); background: var(--bg); line-height: 1.5; }
+    a { color: var(--sage); text-decoration: none; }
+
+    /* Header */
+    header { background: var(--white); border-bottom: 1px solid var(--border); padding: 1.25rem 2rem; }
+    .header-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    h1 { font-size: 17px; font-weight: 600; color: var(--ink); }
+    .subtitle { font-size: 13px; color: var(--muted); }
+
+    /* Controls */
+    .controls { max-width: 1100px; margin: 1.25rem auto; padding: 0 2rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    input[type=text] {
+      flex: 1; min-width: 180px; max-width: 280px;
+      padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 13px; color: var(--text); background: var(--white); outline: none;
+    }
+    input[type=text]:focus { border-color: var(--sage-mid); }
+    select {
+      padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 13px; color: var(--text); background: var(--white); outline: none; cursor: pointer;
+    }
+    select:focus { border-color: var(--sage-mid); }
+    .age-filter { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+    .age-filter input[type=number] {
+      width: 64px; padding: 7px 8px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 13px; text-align: center; background: var(--white); color: var(--text);
+    }
+    .btn-reset {
+      padding: 7px 14px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 13px; color: var(--muted); background: var(--white); cursor: pointer;
+    }
+    .btn-reset:hover { border-color: var(--sage-mid); color: var(--sage); }
+
+    /* Tabs */
+    .tabs { max-width: 1100px; margin: 0 auto; padding: 0 2rem; display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+    .tab {
+      padding: 10px 20px; font-size: 13px; font-weight: 500; color: var(--muted);
+      border-bottom: 2px solid transparent; cursor: pointer; margin-bottom: -1px;
+    }
+    .tab.active { color: var(--sage); border-bottom-color: var(--sage); }
+    .tab:hover { color: var(--ink); }
+
+    /* Table wrapper */
+    .table-wrap { max-width: 1100px; margin: 1rem auto 2rem; padding: 0 2rem; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      text-align: left; padding: 9px 12px;
+      font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--muted); background: var(--card); border-bottom: 1px solid var(--border);
+      white-space: nowrap; cursor: pointer; user-select: none;
+    }
+    thead th:hover { color: var(--ink); }
+    thead th .sort-icon { margin-left: 4px; opacity: 0.4; font-size: 10px; }
+    thead th.sorted .sort-icon { opacity: 1; color: var(--sage); }
+    tbody tr { border-bottom: 1px solid var(--border); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--card); }
+    tbody td { padding: 10px 12px; color: var(--text); vertical-align: top; }
+    td.model-name { font-weight: 500; color: var(--ink); }
+
+    /* Badges */
+    .badge {
+      display: inline-block; font-size: 11px; font-weight: 500;
+      padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border);
+      background: var(--card); color: var(--muted);
+    }
+    .badge.tissue-blood  { background: #fef2f2; color: #9b1a1a; border-color: #fecaca; }
+    .badge.tissue-cortex { background: #f0f2ec; color: #3a5c2a; border-color: var(--sage-mid); }
+    .badge.tissue-buccal { background: #fdf3e0; color: var(--amber); border-color: #fcd89a; }
+    .badge.tissue-cord   { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+    .badge.tissue-multi  { background: #f5f3ff; color: #5b21b6; border-color: #ddd6fe; }
+    .badge.gen-1st  { background: var(--card); color: var(--muted); border-color: var(--border); }
+    .badge.gen-2nd  { background: #fdf3e0; color: var(--amber); border-color: #fcd89a; }
+    .badge.gen-3rd  { background: #f0f2ec; color: #3a5c2a; border-color: var(--sage-mid); }
+    .badge.gen-4th  { background: #fef2f2; color: #9b1a1a; border-color: #fecaca; }
+    .badge.gen-gest { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+
+    /* Performance bar */
+    .perf-cell { display: flex; align-items: center; gap: 8px; }
+    .perf-bar { height: 4px; border-radius: 2px; background: var(--sage); opacity: 0.7; min-width: 2px; }
+    .perf-val { font-variant-numeric: tabular-nums; }
+    .na { color: var(--light); font-style: italic; }
+
+    /* Empty state */
+    .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 14px; }
+
+    /* Count */
+    .count { font-size: 12px; color: var(--muted); }
+
+    /* Info box */
+    .info { max-width: 1100px; margin: 0 auto 0; padding: 0.75rem 2rem; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--border); }
+    .info a { color: var(--sage); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <h1>Biological Age Model Database</h1>
+      <p class="subtitle">Epigenetic and brain age models evaluated in the MIND Consortium across developmental cohorts</p>
+    </div>
+    <a href="https://epi-brain-dashboard.streamlit.app" target="_blank" style="font-size:12.5px; color:var(--sage);">&#8599; Full interactive dashboard</a>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('epi')">Epigenetic age models <span class="count" id="epi-count"></span></div>
+  <div class="tab" onclick="switchTab('brain')">Brain age models <span class="count" id="brain-count"></span></div>
+</div>
+
+<div class="controls">
+  <input type="text" id="search" placeholder="Search model name…" oninput="applyFilters()">
+
+  <div id="epi-controls">
+    <select id="filter-tissue" onchange="applyFilters()">
+      <option value="">All tissues</option>
+      <option value="blood">Blood</option>
+      <option value="cortex">Cortex</option>
+      <option value="buccal">Buccal</option>
+      <option value="cord">Cord</option>
+      <option value="multi">Multi-tissue</option>
+    </select>
+    <select id="filter-array" onchange="applyFilters()" style="margin-left:6px">
+      <option value="">All arrays</option>
+      <option value="450k">450k</option>
+      <option value="EPICv1">EPICv1</option>
+    </select>
+    <select id="filter-gen" onchange="applyFilters()" style="margin-left:6px">
+      <option value="">All generations</option>
+      <option value="1st gen">1st generation</option>
+      <option value="2nd gen">2nd generation</option>
+      <option value="3rd gen">3rd generation</option>
+      <option value="4th gen">4th generation</option>
+      <option value="Gestational">Gestational</option>
+    </select>
+  </div>
+
+  <div class="age-filter" id="age-filter-wrap">
+    <span>Training age:</span>
+    <input type="number" id="age-from" placeholder="min" onchange="applyFilters()">
+    <span>–</span>
+    <input type="number" id="age-to" placeholder="max" onchange="applyFilters()">
+  </div>
+
+  <button class="btn-reset" onclick="resetFilters()">Reset</button>
+</div>
+
+<div class="table-wrap">
+  <table id="model-table">
+    <thead id="table-head"></thead>
+    <tbody id="table-body"></tbody>
+  </table>
+  <div class="empty" id="empty-msg" style="display:none">No models match the current filters.</div>
+</div>
+
+<div class="info">
+  Performance metrics are pooled estimates from random-effects meta-analysis across MIND Consortium cohorts.
+  <b>wMAE</b> = weighted mean absolute error (lower = better; in years for postnatal clocks, in weeks for gestational clocks). <b>Pearson r</b> = correlation between predicted and chronological/gestational age (higher = better).
+  DunedinPACE and DNAmTL do not predict age in years so wMAE is not applicable.
+  &nbsp;·&nbsp; <a href="https://epi-brain-dashboard.streamlit.app" target="_blank">Full interactive dashboard ↗</a>
+</div>
+
+<script>
+const DATA = {
+  epi: [
+    {model:"PCBrainAge",tissue:"cortex",array:"450k",age_min:20,age_max:97,gen:"1st gen",wMAE:6.53,pearson:0.201},
+    {model:"PCGrimAge",tissue:"blood",array:"450k",age_min:24,age_max:92,gen:"2nd gen",wMAE:11.53,pearson:0.286},
+    {model:"CorticalClock",tissue:"cortex",array:"450k",age_min:1.3,age_max:108,gen:"1st gen",wMAE:9.18,pearson:0.278},
+    {model:"cAge",tissue:"blood",array:"450k",age_min:2,age_max:101,gen:"1st gen",wMAE:1.87,pearson:0.383},
+    {model:"AltumAge",tissue:"multi",array:"450k",age_min:-0.8,age_max:112,gen:"1st gen",wMAE:1.98,pearson:0.312},
+    {model:"Horvath2013",tissue:"multi",array:"450k",age_min:-0.5,age_max:100,gen:"1st gen",wMAE:1.63,pearson:0.258},
+    {model:"DamAge",tissue:"blood",array:"450k",age_min:23.7,age_max:75,gen:"4th gen",wMAE:27.34,pearson:0.177},
+    {model:"AdaptAge",tissue:"blood",array:"450k",age_min:23.7,age_max:75,gen:"4th gen",wMAE:14.42,pearson:0.141},
+    {model:"DunedinPACE",tissue:"blood",array:"450k",age_min:45,age_max:45,gen:"3rd gen",wMAE:null,pearson:0.105},
+    {model:"Hannum",tissue:"blood",array:"450k",age_min:19,age_max:101,gen:"1st gen",wMAE:4.44,pearson:0.232},
+    {model:"PhenoAge",tissue:"blood",array:"450k",age_min:21,age_max:100,gen:"2nd gen",wMAE:5.13,pearson:0.234},
+    {model:"skinHorvath",tissue:"multi",array:"450k",age_min:-0.2,age_max:94,gen:"1st gen",wMAE:1.85,pearson:0.386},
+    {model:"PedBE",tissue:"buccal",array:"450k",age_min:0.2,age_max:19.5,gen:"1st gen",wMAE:1.65,pearson:0.253},
+    {model:"Wu",tissue:"blood",array:"450k",age_min:0.8,age_max:17.7,gen:"1st gen",wMAE:2.53,pearson:0.202},
+    {model:"DNAmTL",tissue:"blood",array:"450k",age_min:22.2,age_max:93.1,gen:"2nd gen",wMAE:null,pearson:0.156},
+    {model:"ZhangBLUP",tissue:"blood",array:"450k",age_min:2,age_max:104,gen:"1st gen",wMAE:2.66,pearson:0.320},
+    {model:"ZhangEN",tissue:"blood",array:"450k",age_min:2,age_max:104,gen:"1st gen",wMAE:3.26,pearson:0.354},
+    {model:"Bohlin_conv",tissue:"cord",array:"450k",age_min:null,age_max:null,gen:"Gestational",wMAE:0.027,pearson:0.812},
+    {model:"Knight_conv",tissue:"cord",array:"450k",age_min:null,age_max:null,gen:"Gestational",wMAE:0.053,pearson:0.632},
+    {model:"EPIC_conv",tissue:"cord",array:"EPICv1",age_min:null,age_max:null,gen:"Gestational",wMAE:0.333,pearson:0.782}
+  ],
+  brain: [
+    {model:"ENIGMA",ml_method:"Ridge regression",age_min:18,age_max:75,wMAE:2.39,pearson:0.095},
+    {model:"Centile2",ml_method:"SVR (RBF kernel)",age_min:5,age_max:40,wMAE:1.44,pearson:0.281},
+    {model:"Kaufmann",ml_method:"XGBoost (sex-specific)",age_min:3,age_max:96,wMAE:1.58,pearson:0.268},
+    {model:"PyBrainAge",ml_method:"Extra Trees",age_min:2,age_max:100,wMAE:2.36,pearson:0.147},
+    {model:"DevBrainAge",ml_method:"XGBoost",age_min:9,age_max:19,wMAE:1.41,pearson:0.278},
+    {model:"Pyment",ml_method:"CNN (SFCN-reg)",age_min:3,age_max:85,wMAE:1.36,pearson:0.329},
+    {model:"DBN",ml_method:"CNN (Inception-ResNetV2)",age_min:3,age_max:95,wMAE:1.49,pearson:0.246},
+    {model:"DunedinPACNI",ml_method:"Elastic Net",age_min:45,age_max:45,wMAE:null,pearson:-0.102}
+  ]
+};
+
+const EPI_COLS = [
+  {key:'model', label:'Model', sortable:true},
+  {key:'tissue', label:'Tissue', sortable:true},
+  {key:'array', label:'Array', sortable:true},
+  {key:'age_range', label:'Training age range', sortable:false},
+  {key:'gen', label:'Generation', sortable:true},
+  {key:'wMAE', label:'wMAE ↓', sortable:true},
+  {key:'pearson', label:'Pearson r ↑', sortable:true}
+];
+const BRAIN_COLS = [
+  {key:'model', label:'Model', sortable:true},
+  {key:'ml_method', label:'ML method', sortable:false},
+  {key:'age_range', label:'Training age range', sortable:false},
+  {key:'wMAE', label:'wMAE ↓', sortable:true},
+  {key:'pearson', label:'Pearson r ↑', sortable:true}
+];
+
+let currentTab = 'epi';
+let sortCol = null;
+let sortDir = 1;
+
+function tissueBadge(t) {
+  if (!t) return '<span class="na">—</span>';
+  const cls = {blood:'tissue-blood',cortex:'tissue-cortex',buccal:'tissue-buccal',cord:'tissue-cord',multi:'tissue-multi'}[t] || '';
+  return `<span class="badge ${cls}">${t}</span>`;
+}
+function genBadge(g) {
+  if (!g) return '<span class="na">—</span>';
+  const cls = {'1st gen':'gen-1st','2nd gen':'gen-2nd','3rd gen':'gen-3rd','4th gen':'gen-4th','Gestational':'gen-gest'}[g] || '';
+  return `<span class="badge ${cls}">${g}</span>`;
+}
+function pearsonBar(v, maxV) {
+  if (v === null || v === undefined) return '<span class="na">—</span>';
+  const w = Math.max(0, Math.min(1, v / maxV)) * 80;
+  return `<div class="perf-cell"><div class="perf-bar" style="width:${w}px"></div><span class="perf-val">${v.toFixed(3)}</span></div>`;
+}
+function ageRange(mn, mx) {
+  if (mn === null && mx === null) return '<span class="na">—</span>';
+  const a = mn !== null ? mn : '?';
+  const b = mx !== null ? mx : '?';
+  return `${a} – ${b} yrs`;
+}
+function wMAECell(v) {
+  if (v === null || v === undefined) return '<span class="na">—</span>';
+  return `<span class="perf-val">${v.toFixed(2)}</span>`;
+}
+
+function renderHead(cols) {
+  const head = document.getElementById('table-head');
+  head.innerHTML = '<tr>' + cols.map(c => {
+    const icon = c.sortable ? `<span class="sort-icon">${sortCol===c.key?(sortDir===1?'▲':'▼'):'⇅'}</span>` : '';
+    const cls = sortCol === c.key ? 'sorted' : '';
+    const onclick = c.sortable ? `onclick="sortBy('${c.key}')"` : '';
+    return `<th class="${cls}" ${onclick}>${c.label}${icon}</th>`;
+  }).join('') + '</tr>';
+}
+
+function renderRows(rows) {
+  const body = document.getElementById('table-body');
+  const empty = document.getElementById('empty-msg');
+  if (!rows.length) { body.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const maxP = 0.85;
+  if (currentTab === 'epi') {
+    body.innerHTML = rows.map(r => `<tr>
+      <td class="model-name">${r.model}</td>
+      <td>${tissueBadge(r.tissue)}</td>
+      <td><span class="badge">${r.array||'—'}</span></td>
+      <td>${ageRange(r.age_min, r.age_max)}</td>
+      <td>${genBadge(r.gen)}</td>
+      <td>${wMAECell(r.wMAE)}</td>
+      <td>${pearsonBar(r.pearson, maxP)}</td>
+    </tr>`).join('');
+  } else {
+    body.innerHTML = rows.map(r => `<tr>
+      <td class="model-name">${r.model}</td>
+      <td style="color:var(--muted);font-size:12.5px">${r.ml_method||'—'}</td>
+      <td>${ageRange(r.age_min, r.age_max)}</td>
+      <td>${wMAECell(r.wMAE)}</td>
+      <td>${pearsonBar(r.pearson, maxP)}</td>
+    </tr>`).join('');
+  }
+}
+
+function getFiltered() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const tissue = document.getElementById('filter-tissue')?.value || '';
+  const array = document.getElementById('filter-array')?.value || '';
+  const gen = document.getElementById('filter-gen')?.value || '';
+  const ageFrom = parseFloat(document.getElementById('age-from').value) || -Infinity;
+  const ageTo   = parseFloat(document.getElementById('age-to').value)   ||  Infinity;
+
+  let rows = [...DATA[currentTab]];
+  if (q) rows = rows.filter(r => r.model.toLowerCase().includes(q));
+  if (currentTab === 'epi') {
+    if (tissue) rows = rows.filter(r => r.tissue === tissue);
+    if (array)  rows = rows.filter(r => r.array === array);
+    if (gen)    rows = rows.filter(r => r.gen === gen);
+  }
+  // Age range: model must overlap with requested range
+  rows = rows.filter(r => {
+    if (r.age_min === null && r.age_max === null) return true;
+    const mn = r.age_min ?? -Infinity;
+    const mx = r.age_max ?? Infinity;
+    return mn <= ageTo && mx >= ageFrom;
+  });
+  if (sortCol) {
+    rows.sort((a,b) => {
+      let av = a[sortCol], bv = b[sortCol];
+      if (av === null || av === undefined) av = sortDir === 1 ? Infinity : -Infinity;
+      if (bv === null || bv === undefined) bv = sortDir === 1 ? Infinity : -Infinity;
+      if (typeof av === 'string') return sortDir * av.localeCompare(bv);
+      return sortDir * (av - bv);
+    });
+  }
+  return rows;
+}
+
+function applyFilters() {
+  const rows = getFiltered();
+  const cols = currentTab === 'epi' ? EPI_COLS : BRAIN_COLS;
+  renderHead(cols);
+  renderRows(rows);
+  document.getElementById(`${currentTab}-count`).textContent = `(${rows.length})`;
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = 1; }
+  applyFilters();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  sortCol = null; sortDir = 1;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['epi','brain'][i] === tab));
+  document.getElementById('epi-controls').style.display = tab === 'epi' ? 'contents' : 'none';
+  applyFilters();
+}
+
+function resetFilters() {
+  document.getElementById('search').value = '';
+  ['filter-tissue','filter-array','filter-gen'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.getElementById('age-from').value = '';
+  document.getElementById('age-to').value = '';
+  sortCol = null; sortDir = 1;
+  applyFilters();
+}
+
+// Init
+document.getElementById('epi-count').textContent = `(${DATA.epi.length})`;
+document.getElementById('brain-count').textContent = `(${DATA.brain.length})`;
+switchTab('epi');
+</script>
+</body>
+</html>
