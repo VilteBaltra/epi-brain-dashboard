@@ -179,7 +179,7 @@
 
 <div class="info">
   Performance metrics are pooled estimates from random-effects meta-analysis across MIND Consortium cohorts.
-  <b>wMAE</b> = weighted mean absolute error (lower = better; in years for postnatal clocks, in weeks for gestational clocks). <b>Pearson r</b> = correlation between predicted and chronological/gestational age (higher = better).
+  <b>MAE</b> = pooled mean absolute error (N-weighted across cohorts, unweighted by sample characteristics). <b>wMAE</b> = weighted MAE (lower = better; in years for postnatal clocks, in weeks for gestational clocks). <b>Pearson r</b> = correlation between predicted and chronological/gestational age (higher = better). DunedinPACE and DNAmTL MAE/wMAE not applicable (pace-of-ageing / telomere length scales). <b>Total N</b> = total samples evaluated across all cohorts.
   DunedinPACE and DNAmTL do not predict age in years so wMAE is not applicable.
   &nbsp;·&nbsp; <a href="https://epi-brain-dashboard.streamlit.app" target="_blank">Full interactive dashboard ↗</a>
 </div>
@@ -187,36 +187,36 @@
 <script>
 const DATA = {
   epi: [
-    {model:"PCBrainAge",tissue:"cortex",array:"450k",age_min:20,age_max:97,gen:"1st gen",wMAE:6.53,pearson:0.201},
-    {model:"PCGrimAge",tissue:"blood",array:"450k",age_min:24,age_max:92,gen:"2nd gen",wMAE:11.53,pearson:0.286},
-    {model:"CorticalClock",tissue:"cortex",array:"450k",age_min:1.3,age_max:108,gen:"1st gen",wMAE:9.18,pearson:0.278},
-    {model:"cAge",tissue:"blood",array:"450k",age_min:2,age_max:101,gen:"1st gen",wMAE:1.87,pearson:0.383},
-    {model:"AltumAge",tissue:"multi",array:"450k",age_min:-0.8,age_max:112,gen:"1st gen",wMAE:1.98,pearson:0.312},
-    {model:"Horvath2013",tissue:"multi",array:"450k",age_min:-0.5,age_max:100,gen:"1st gen",wMAE:1.63,pearson:0.258},
-    {model:"DamAge",tissue:"blood",array:"450k",age_min:23.7,age_max:75,gen:"4th gen",wMAE:27.34,pearson:0.177},
-    {model:"AdaptAge",tissue:"blood",array:"450k",age_min:23.7,age_max:75,gen:"4th gen",wMAE:14.42,pearson:0.141},
-    {model:"DunedinPACE",tissue:"blood",array:"450k",age_min:45,age_max:45,gen:"3rd gen",wMAE:null,pearson:0.105},
-    {model:"Hannum",tissue:"blood",array:"450k",age_min:19,age_max:101,gen:"1st gen",wMAE:4.44,pearson:0.232},
-    {model:"PhenoAge",tissue:"blood",array:"450k",age_min:21,age_max:100,gen:"2nd gen",wMAE:5.13,pearson:0.234},
-    {model:"skinHorvath",tissue:"multi",array:"450k",age_min:-0.2,age_max:94,gen:"1st gen",wMAE:1.85,pearson:0.386},
-    {model:"PedBE",tissue:"buccal",array:"450k",age_min:0.2,age_max:19.5,gen:"1st gen",wMAE:1.65,pearson:0.253},
-    {model:"Wu",tissue:"blood",array:"450k",age_min:0.8,age_max:17.7,gen:"1st gen",wMAE:2.53,pearson:0.202},
-    {model:"DNAmTL",tissue:"blood",array:"450k",age_min:22.2,age_max:93.1,gen:"2nd gen",wMAE:null,pearson:0.156},
-    {model:"ZhangBLUP",tissue:"blood",array:"450k",age_min:2,age_max:104,gen:"1st gen",wMAE:2.66,pearson:0.320},
-    {model:"ZhangEN",tissue:"blood",array:"450k",age_min:2,age_max:104,gen:"1st gen",wMAE:3.26,pearson:0.354},
-    {model:"Bohlin_conv",tissue:"cord",array:"450k",age_min:null,age_max:null,gen:"Gestational",wMAE:0.027,pearson:0.812},
-    {model:"Knight_conv",tissue:"cord",array:"450k",age_min:null,age_max:null,gen:"Gestational",wMAE:0.053,pearson:0.632},
-    {model:"EPIC_conv",tissue:"cord",array:"EPICv1",age_min:null,age_max:null,gen:"Gestational",wMAE:0.333,pearson:0.782}
+    {model:"PCBrainAge",tissue:"cortex",array:"450k",age_min:20,age_max:97,gen:"1st gen",ml:"EN+",MAE:12.52,wMAE:6.53,pearson:0.201,N:20913},
+    {model:"PCGrimAge",tissue:"blood",array:"450k",age_min:24,age_max:92,gen:"2nd gen",ml:"EN",MAE:23.68,wMAE:11.53,pearson:0.286,N:19789},
+    {model:"CorticalClock",tissue:"cortex",array:"450k",age_min:1.3,age_max:108,gen:"1st gen",ml:"EN",MAE:13.26,wMAE:9.18,pearson:0.278,N:19789},
+    {model:"cAge",tissue:"blood",array:"450k",age_min:2,age_max:101,gen:"1st gen",ml:"EN",MAE:3.78,wMAE:1.87,pearson:0.383,N:19664},
+    {model:"AltumAge",tissue:"multi",array:"450k",age_min:-0.8,age_max:112,gen:"1st gen",ml:"Deep learning",MAE:2.95,wMAE:1.98,pearson:0.312,N:20913},
+    {model:"Horvath2013",tissue:"multi",array:"450k",age_min:-0.5,age_max:100,gen:"1st gen",ml:"EN",MAE:2.77,wMAE:1.63,pearson:0.258,N:20913},
+    {model:"DamAge",tissue:"blood",array:"450k",age_min:23.7,age_max:75,gen:"4th gen",ml:"EN",MAE:55.79,wMAE:27.34,pearson:0.177,N:20913},
+    {model:"AdaptAge",tissue:"blood",array:"450k",age_min:23.7,age_max:75,gen:"4th gen",ml:"EN",MAE:29.14,wMAE:14.42,pearson:0.141,N:20913},
+    {model:"DunedinPACE",tissue:"blood",array:"450k",age_min:45,age_max:45,gen:"3rd gen",ml:"EN",MAE:null,wMAE:null,pearson:0.105,N:20913},
+    {model:"Hannum",tissue:"blood",array:"450k",age_min:19,age_max:101,gen:"1st gen",ml:"EN",MAE:10.97,wMAE:4.44,pearson:0.232,N:20087},
+    {model:"PhenoAge",tissue:"blood",array:"450k",age_min:21,age_max:100,gen:"2nd gen",ml:"EN",MAE:14.67,wMAE:5.13,pearson:0.234,N:20087},
+    {model:"skinHorvath",tissue:"multi",array:"450k",age_min:-0.2,age_max:94,gen:"1st gen",ml:"EN",MAE:2.91,wMAE:1.85,pearson:0.386,N:20087},
+    {model:"PedBE",tissue:"buccal",array:"450k",age_min:0.2,age_max:19.5,gen:"1st gen",ml:"EN",MAE:4.40,wMAE:1.65,pearson:0.253,N:19965},
+    {model:"Wu",tissue:"blood",array:"450k",age_min:0.8,age_max:17.7,gen:"1st gen",ml:"EN",MAE:4.74,wMAE:2.53,pearson:0.202,N:20087},
+    {model:"DNAmTL",tissue:"blood",array:"450k",age_min:22.2,age_max:93.1,gen:"2nd gen",ml:"EN",MAE:null,wMAE:null,pearson:0.156,N:14045},
+    {model:"ZhangBLUP",tissue:"blood",array:"450k",age_min:2,age_max:104,gen:"1st gen",ml:"BLUP",MAE:5.70,wMAE:2.66,pearson:0.320,N:20087},
+    {model:"ZhangEN",tissue:"blood",array:"450k",age_min:2,age_max:104,gen:"1st gen",ml:"EN",MAE:9.11,wMAE:3.26,pearson:0.354,N:20087},
+    {model:"Bohlin_conv",tissue:"cord",array:"450k",age_min:null,age_max:null,gen:"Gestational",ml:"EN",MAE:0.03,wMAE:0.027,pearson:0.812,N:3735},
+    {model:"Knight_conv",tissue:"cord",array:"450k",age_min:null,age_max:null,gen:"Gestational",ml:"EN",MAE:0.06,wMAE:0.053,pearson:0.632,N:3963},
+    {model:"EPIC_conv",tissue:"cord",array:"EPICv1",age_min:null,age_max:null,gen:"Gestational",ml:"Lasso",MAE:3.73,wMAE:0.333,pearson:0.782,N:1739}
   ],
   brain: [
-    {model:"ENIGMA",ml_method:"Ridge regression",age_min:18,age_max:75,wMAE:2.39,pearson:0.095},
-    {model:"Centile2",ml_method:"SVR (RBF kernel)",age_min:5,age_max:40,wMAE:1.44,pearson:0.281},
-    {model:"Kaufmann",ml_method:"XGBoost (sex-specific)",age_min:3,age_max:96,wMAE:1.58,pearson:0.268},
-    {model:"PyBrainAge",ml_method:"Extra Trees",age_min:2,age_max:100,wMAE:2.36,pearson:0.147},
-    {model:"DevBrainAge",ml_method:"XGBoost",age_min:9,age_max:19,wMAE:1.41,pearson:0.278},
-    {model:"Pyment",ml_method:"CNN (SFCN-reg)",age_min:3,age_max:85,wMAE:1.36,pearson:0.329},
-    {model:"DBN",ml_method:"CNN (Inception-ResNetV2)",age_min:3,age_max:95,wMAE:1.49,pearson:0.246},
-    {model:"DunedinPACNI",ml_method:"Elastic Net",age_min:45,age_max:45,wMAE:null,pearson:-0.102}
+    {model:"ENIGMA",ml_method:"Ridge regression",age_min:18,age_max:75,MAE:8.03,wMAE:2.39,pearson:0.095,N:14510},
+    {model:"Centile2",ml_method:"SVR (RBF kernel)",age_min:5,age_max:40,MAE:2.91,wMAE:1.44,pearson:0.281,N:5853},
+    {model:"Kaufmann",ml_method:"XGBoost (sex-specific)",age_min:3,age_max:96,MAE:4.98,wMAE:1.58,pearson:0.268,N:4242},
+    {model:"PyBrainAge",ml_method:"Extra Trees",age_min:2,age_max:100,MAE:9.66,wMAE:2.36,pearson:0.147,N:12150},
+    {model:"DevBrainAge",ml_method:"XGBoost",age_min:9,age_max:19,MAE:2.76,wMAE:1.41,pearson:0.278,N:5854},
+    {model:"Pyment",ml_method:"CNN (SFCN-reg)",age_min:3,age_max:85,MAE:1.60,wMAE:1.36,pearson:0.329,N:10522},
+    {model:"DBN",ml_method:"CNN (Inception-ResNetV2)",age_min:3,age_max:95,MAE:10.49,wMAE:1.49,pearson:0.246,N:2761},
+    {model:"DunedinPACNI",ml_method:"Elastic Net",age_min:45,age_max:45,MAE:null,wMAE:null,pearson:-0.102,N:14513}
   ]
 };
 
@@ -226,15 +226,20 @@ const EPI_COLS = [
   {key:'array', label:'Array', sortable:true},
   {key:'age_range', label:'Training age range', sortable:false},
   {key:'gen', label:'Generation', sortable:true},
+  {key:'ml', label:'ML method', sortable:false},
+  {key:'MAE', label:'MAE ↓', sortable:true},
   {key:'wMAE', label:'wMAE ↓', sortable:true},
-  {key:'pearson', label:'Pearson r ↑', sortable:true}
+  {key:'pearson', label:'Pearson r ↑', sortable:true},
+  {key:'N', label:'Total N', sortable:true}
 ];
 const BRAIN_COLS = [
   {key:'model', label:'Model', sortable:true},
   {key:'ml_method', label:'ML method', sortable:false},
   {key:'age_range', label:'Training age range', sortable:false},
+  {key:'MAE', label:'MAE ↓', sortable:true},
   {key:'wMAE', label:'wMAE ↓', sortable:true},
-  {key:'pearson', label:'Pearson r ↑', sortable:true}
+  {key:'pearson', label:'Pearson r ↑', sortable:true},
+  {key:'N', label:'Total N', sortable:true}
 ];
 
 let currentTab = 'epi';
@@ -290,16 +295,21 @@ function renderRows(rows) {
       <td><span class="badge">${r.array||'—'}</span></td>
       <td>${ageRange(r.age_min, r.age_max)}</td>
       <td>${genBadge(r.gen)}</td>
+      <td style="color:var(--muted);font-size:12.5px">${r.ml||'—'}</td>
+      <td>${wMAECell(r.MAE)}</td>
       <td>${wMAECell(r.wMAE)}</td>
       <td>${pearsonBar(r.pearson, maxP)}</td>
+      <td style="color:var(--muted);font-size:12.5px">${r.N ? r.N.toLocaleString() : '—'}</td>
     </tr>`).join('');
   } else {
     body.innerHTML = rows.map(r => `<tr>
       <td class="model-name">${r.model}</td>
       <td style="color:var(--muted);font-size:12.5px">${r.ml_method||'—'}</td>
       <td>${ageRange(r.age_min, r.age_max)}</td>
+      <td>${wMAECell(r.MAE)}</td>
       <td>${wMAECell(r.wMAE)}</td>
       <td>${pearsonBar(r.pearson, maxP)}</td>
+      <td style="color:var(--muted);font-size:12.5px">${r.N ? r.N.toLocaleString() : '—'}</td>
     </tr>`).join('');
   }
 }
