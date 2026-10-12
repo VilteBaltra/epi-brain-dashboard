@@ -847,16 +847,13 @@ with tab_4b:
     _sig_ci = (_hm_lb.values > 0) | (_hm_ub.values < 0)
     _sig    = _fdr_sig if _use_fdr else _sig_ci
 
-    # Build cell text: β to 2 d.p., asterisk if significant
+    # Build cell text: β value only on significant cells, asterisk only on non-sig
     _z_arr = _hm_z.values
     _cell_text = np.where(
         np.isnan(_z_arr),
         "",
-        np.vectorize(lambda v, s: f"{v:.2f}{'*' if s else ''}")(_z_arr, _sig)
+        np.vectorize(lambda v, s: f"{v:.2f}*" if s else "·")(_z_arr, _sig)
     )
-    # Choose text colour per cell: white for dark cells, black for light cells
-    _thresh = _abs_max * 0.55
-    _txt_color = np.where(np.abs(_z_arr) > _thresh, "white", "black").tolist()
 
     fig_4b = go.Figure()
 
@@ -872,7 +869,7 @@ with tab_4b:
         colorbar=dict(title="β", thickness=14, len=0.8),
         text=_cell_text,
         texttemplate="%{text}",
-        textfont={"size": 8},
+        textfont={"size": 10},
         hovertemplate=(
             "<b>Brain:</b> %{y}<br>"
             "<b>Epi:</b> %{x}<br>"
