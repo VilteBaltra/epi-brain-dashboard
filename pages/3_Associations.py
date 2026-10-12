@@ -852,7 +852,7 @@ with tab_4b:
     _cell_text = np.where(
         np.isnan(_z_arr),
         "",
-        np.vectorize(lambda v, s: f"{v:.2f}*" if s else "·")(_z_arr, _sig)
+        np.vectorize(lambda v, s: f"{v:.2f}*" if s else "")(_z_arr, _sig)
     )
 
     fig_4b = go.Figure()
