@@ -847,14 +847,21 @@ with tab_4b:
     _sig_ci = (_hm_lb.values > 0) | (_hm_ub.values < 0)
     _sig    = _fdr_sig if _use_fdr else _sig_ci
 
-    _sig_rows, _sig_cols = np.where(_sig)
-    _dot_x = [_ep_ord[c] for c in _sig_cols]
-    _dot_y = [_br_ord[r] for r in _sig_rows]
+    # Build cell text: β to 2 d.p., asterisk if significant
+    _z_arr = _hm_z.values
+    _cell_text = np.where(
+        np.isnan(_z_arr),
+        "",
+        np.vectorize(lambda v, s: f"{v:.2f}{'*' if s else ''}")(_z_arr, _sig)
+    )
+    # Choose text colour per cell: white for dark cells, black for light cells
+    _thresh = _abs_max * 0.55
+    _txt_color = np.where(np.abs(_z_arr) > _thresh, "white", "black").tolist()
 
     fig_4b = go.Figure()
 
     fig_4b.add_trace(go.Heatmap(
-        z=_hm_z.values,
+        z=_z_arr,
         x=_ep_ord,
         y=_br_ord,
         customdata=_cd,
@@ -863,6 +870,9 @@ with tab_4b:
         zmin=-_abs_max,
         zmax=_abs_max,
         colorbar=dict(title="β", thickness=14, len=0.8),
+        text=_cell_text,
+        texttemplate="%{text}",
+        textfont={"size": 8},
         hovertemplate=(
             "<b>Brain:</b> %{y}<br>"
             "<b>Epi:</b> %{x}<br>"
@@ -883,17 +893,6 @@ with tab_4b:
             hoverinfo="skip",
         ))
 
-    # Significance dots (black circle)
-    if _dot_x:
-        fig_4b.add_trace(go.Scatter(
-            x=_dot_x,
-            y=_dot_y,
-            mode="markers",
-            marker=dict(symbol="circle", size=5, color="black", opacity=0.75),
-            hoverinfo="skip",
-            showlegend=False,
-        ))
-
     fig_4b.update_layout(
         height=max(320, 52 * len(_br_ord)),
         margin=dict(l=120, r=60, t=20, b=180),
@@ -908,9 +907,9 @@ with tab_4b:
         "Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate; applied to filtered subset)."
     )
     _sig_note = (
-        "Black dots = FDR-significant (BH p_FDR < 0.05); grey cells = not significant. P-values derived from 95% CI via z-score."
+        "* = FDR-significant (BH p_FDR < 0.05); grey cells = not significant. P-values derived from 95% CI via z-score."
         if _use_fdr else
-        "Black dots = 95% CI excludes zero."
+        "* = 95% CI excludes zero."
     )
     st.caption(f"{_meta_note} {_sig_note}")
     download_csv_button(_pm_4b, "fig4b_heatmap_pooled_estimates.csv", key="dl_4b")
