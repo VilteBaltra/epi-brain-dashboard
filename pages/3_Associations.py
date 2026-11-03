@@ -241,6 +241,13 @@ def _load_r_assoc_meta():
         r_est["brain_model_facet"] = r_est["brain_model"].apply(
             lambda x: "Epi clocks (pooled)" if x == "Pooled" else x
         )
+        # metafor p-values and cohort counts per brain × epi pair (Fig 4B)
+        try:
+            mw = pd.read_csv("data/assoc_modelwise_estimates.csv",
+                             usecols=["brain_model", "epi_model", "pval", "k"])
+            r_est = r_est.merge(mw, on=["brain_model", "epi_model"], how="left")
+        except FileNotFoundError:
+            pass
         return r_est
     except FileNotFoundError:
         return None
@@ -717,7 +724,7 @@ with tab_4b:
     st.caption(
         "Each cell shows the pooled β for one brain model × epi clock combination. "
         "Colour scale is symmetric around 0 (red = positive, blue = negative). "
-        "Hover for exact β, 95% CI and number of cohorts (k)."
+        "Hover for exact β, 95% CI and number of estimates (k)."
     )
 
     _BRAIN_ORDER_4B = [
@@ -790,6 +797,15 @@ with tab_4b:
     _hm_lb = _hm_lb.reindex(index=_br_ord, columns=_ep_ord)
     _hm_ub = _hm_ub.reindex(index=_br_ord, columns=_ep_ord)
 
+    # metafor p-values (unfiltered view only) and cohort counts, if available
+    def _pivot_opt(col):
+        if col not in _pm_4b.columns or _pm_4b[col].isna().all():
+            return None
+        return (_pm_4b.pivot_table(index="brain_model", columns="epi_model", values=col, aggfunc="first")
+                .reindex(index=_br_ord, columns=_ep_ord))
+    _hm_p = _pivot_opt("pval")
+    _hm_k = _pivot_opt("k")
+
     _abs_max_dynamic = float(np.nanmax(np.abs(_hm_z.values))) if not _hm_z.empty else 1.0
 
     # ── Colour scale toggle ────────────────────────────────────────────────
@@ -802,20 +818,26 @@ with tab_4b:
     )
     _abs_max = 1.0 if _use_fixed_scale else _abs_max_dynamic
 
-    _cd = np.stack([_hm_lb.values, _hm_ub.values], axis=-1)
+    _cd = np.stack([
+        _hm_lb.values, _hm_ub.values,
+        _hm_k.values if _hm_k is not None else np.full(_hm_z.shape, np.nan),
+    ], axis=-1)
 
-    # ── Derive p-values from 95% CI (z-score method) and apply BH FDR ────
+    # ── P-values: metafor's when available, else derived from 95% CI; then BH FDR ──
     import math
 
-    _se_vals = (_hm_ub.values - _hm_lb.values) / 3.92   # SE = CI_width / (2*1.96)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        _z_vals = np.where(_se_vals > 0, _hm_z.values / _se_vals, np.nan)
+    if _hm_p is not None:
+        _p_flat = _hm_p.values.astype(float).flatten()
+    else:
+        _se_vals = (_hm_ub.values - _hm_lb.values) / 3.92   # SE = CI_width / (2*1.96)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            _z_vals = np.where(_se_vals > 0, _hm_z.values / _se_vals, np.nan)
 
-    # Two-tailed p from complementary error function (no scipy needed)
-    _p_flat = np.array([
-        math.erfc(abs(float(z)) / math.sqrt(2)) if np.isfinite(z) else np.nan
-        for z in _z_vals.flatten()
-    ])
+        # Two-tailed p from complementary error function (no scipy needed)
+        _p_flat = np.array([
+            math.erfc(abs(float(z)) / math.sqrt(2)) if np.isfinite(z) else np.nan
+            for z in _z_vals.flatten()
+        ])
 
     # Benjamini-Hochberg FDR correction
     def _bh_fdr(pvals, alpha=0.05):
@@ -840,7 +862,7 @@ with tab_4b:
         "FDR-corrected only (Benjamini-Hochberg, p_FDR < 0.05)",
         value=False,
         key="toggle_4b_fdr",
-        help="Grey cells = not significant after FDR correction. P-values derived from 95% CI via z-score method.",
+        help="Grey cells = not significant after FDR correction. P-values from the meta-analysis when unfiltered; derived from 95% CI via z-score when filters are applied.",
     )
 
     # Significance criterion: FDR when toggle on, else CI excludes zero
@@ -873,7 +895,9 @@ with tab_4b:
         hovertemplate=(
             "<b>Brain:</b> %{y}<br>"
             "<b>Epi:</b> %{x}<br>"
-            "<b>β</b> = %{z:.3f} [%{customdata[0]:.3f}, %{customdata[1]:.3f}]<extra></extra>"
+            "<b>β</b> = %{z:.3f} [%{customdata[0]:.3f}, %{customdata[1]:.3f}]"
+            + ("<br><b>k</b> = %{customdata[2]:.0f} estimates (cohort × timepoint)" if _hm_k is not None else "")
+            + "<extra></extra>"
         ),
     ))
 
@@ -904,7 +928,10 @@ with tab_4b:
         "Pooled estimates from DerSimonian-Laird random-effects meta-analysis (approximate; applied to filtered subset)."
     )
     _sig_note = (
-        "* = FDR-significant (BH p_FDR < 0.05); grey cells = not significant. P-values derived from 95% CI via z-score."
+        "* = FDR-significant (BH p_FDR < 0.05); grey cells = not significant. "
+        + ("P-values from the multilevel meta-analysis (metafor)."
+           if _hm_p is not None else
+           "P-values derived from 95% CI via z-score.")
         if _use_fdr else
         "* = 95% CI excludes zero."
     )
