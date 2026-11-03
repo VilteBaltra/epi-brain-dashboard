@@ -574,7 +574,7 @@ with tab_4a:
 
         # raw cohort scatter
         raw_sub = _disp_raw[_disp_raw["brain_model_facet"] == panel].copy()
-        raw_sub["y_num"] = raw_sub["epi_model"].map(y_pos)
+        raw_sub["y_num"] = raw_sub["epi_model"].map(y_pos).astype(float)
         raw_sub = raw_sub.dropna(subset=["y_num", "RLM_Estimate_scaled"])
         raw_sub["y_jitter"] = (
             raw_sub["y_num"] + rng.uniform(-0.18, 0.18, len(raw_sub))
