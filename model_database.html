@@ -178,9 +178,9 @@
   <!-- Age filter (epi + brain) -->
   <div class="age-filter" id="age-filter-wrap">
     <span>Training age:</span>
-    <input type="number" id="age-from" placeholder="min" onchange="applyFilters()">
+    <input type="number" id="age-from" placeholder="min" oninput="applyFilters()">
     <span>–</span>
-    <input type="number" id="age-to" placeholder="max" onchange="applyFilters()">
+    <input type="number" id="age-to" placeholder="max" oninput="applyFilters()">
   </div>
 
   <!-- Assoc-only controls -->
@@ -544,6 +544,7 @@ function renderRows(rows) {
 }
 
 // ── Filtering ────────────────────────────────────────────────────────────────
+function numOr(v, dflt) { const x = parseFloat(v); return isNaN(x) ? dflt : x; }
 function getFiltered() {
   const q = document.getElementById('search').value.toLowerCase();
   let rows = [...DATA[currentTab]];
@@ -552,21 +553,27 @@ function getFiltered() {
     const tissue = document.getElementById('filter-tissue').value;
     const array  = document.getElementById('filter-array').value;
     const gen    = document.getElementById('filter-gen').value;
-    const ageFrom = parseFloat(document.getElementById('age-from').value) || -Infinity;
-    const ageTo   = parseFloat(document.getElementById('age-to').value)   ||  Infinity;
+    const ageFrom = numOr(document.getElementById('age-from').value, -Infinity);   // 0 is a valid age
+    const ageTo   = numOr(document.getElementById('age-to').value,    Infinity);
     if (q)      rows = rows.filter(r => r.model.toLowerCase().includes(q));
     if (tissue) rows = rows.filter(r => r.tissue === tissue);
     if (array)  rows = rows.filter(r => r.array === array);
     if (gen)    rows = rows.filter(r => r.gen === gen);
+    // models without a training age (gestational clocks) are shown only when no age range is entered
+    const ageSet = ageFrom !== -Infinity || ageTo !== Infinity;
     rows = rows.filter(r => {
-      if (r.age_min === null && r.age_max === null) return true;
+      if (r.age_min === null && r.age_max === null) return !ageSet;
       return (r.age_min??-Infinity) <= ageTo && (r.age_max??Infinity) >= ageFrom;
     });
   } else if (currentTab === 'brain') {
-    const ageFrom = parseFloat(document.getElementById('age-from').value) || -Infinity;
-    const ageTo   = parseFloat(document.getElementById('age-to').value)   ||  Infinity;
+    const ageFrom = numOr(document.getElementById('age-from').value, -Infinity);   // 0 is a valid age
+    const ageTo   = numOr(document.getElementById('age-to').value,    Infinity);
     if (q) rows = rows.filter(r => r.model.toLowerCase().includes(q));
-    rows = rows.filter(r => (r.age_min??-Infinity) <= ageTo && (r.age_max??Infinity) >= ageFrom);
+    const ageSet = ageFrom !== -Infinity || ageTo !== Infinity;
+    rows = rows.filter(r => {
+      if (r.age_min === null && r.age_max === null) return !ageSet;
+      return (r.age_min??-Infinity) <= ageTo && (r.age_max??Infinity) >= ageFrom;
+    });
   } else {
     const brain = document.getElementById('filter-brain').value;
     const epi   = document.getElementById('filter-epi').value;
