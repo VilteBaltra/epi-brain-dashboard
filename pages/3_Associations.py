@@ -59,7 +59,7 @@ df = load_data()
 ct = load_ct()
 
 st.title("Brain–Epigenetic Age Associations")
-st.info("Choose models based on tissue, training age range and research question, not statistical significance.")
+st.info("Choose models based on tissue, training age range and research question, not statistical significance. Use the [model database](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html) to filter models by tissue, array and training age.")
 
 # ── Sidebar filters ────────────────────────────────────────────────────────────
 render_sidebar_logo()
