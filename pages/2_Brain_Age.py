@@ -66,6 +66,7 @@ df = load_data()
 ct = load_ct()
 
 st.title("Brain Age Model Performance")
+st.info("Choose models based on tissue, training age range and research question, not statistical significance.")
 
 # -------------------------
 # SIDEBAR FILTERS

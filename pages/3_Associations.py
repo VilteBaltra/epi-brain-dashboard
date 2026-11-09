@@ -59,6 +59,7 @@ df = load_data()
 ct = load_ct()
 
 st.title("Brain–Epigenetic Age Associations")
+st.info("Choose models based on tissue, training age range and research question, not statistical significance.")
 
 # ── Sidebar filters ────────────────────────────────────────────────────────────
 render_sidebar_logo()

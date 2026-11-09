@@ -65,6 +65,7 @@ df = load_data()
 ct = load_ct()
 
 st.title("Epigenetic Clock Performance")
+st.info("Choose models based on tissue, training age range and research question, not statistical significance.")
 
 render_sidebar_logo()
 st.sidebar.header("Filters")
