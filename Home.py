@@ -137,7 +137,7 @@ epi_data = [
     ["1st gen", "Thrush 2022",          "PCBrainAge",         "Chronological age",          "Cortex",                  "20.0–97.0"],
     ["1st gen", "Wu 2019",              "–",                  "Chronological age",          "Whole blood",             "0.8–17.7"],
     ["1st gen", "Zhang Q 2019",         "ZhangEN",            "Chronological age",          "Whole blood*",            "2.0–104.0"],
-    ["1st gen", "Zhang Q 2019",         "ZhangBLUB",          "Chronological age",          "Whole blood*",            "2.0–104.0"],
+    ["1st gen", "Zhang Q 2019",         "ZhangBLUP",          "Chronological age",          "Whole blood*",            "2.0–104.0"],
     ["2nd gen", "Higgins-Chen 2022",    "PCGrimAge",          "Mortality risk",             "Whole blood",             "24.0–92.0"],
     ["2nd gen", "Levine 2018",          "PhenoAge",           "Mortality risk",             "Whole blood",             "20–90+"],
     ["2nd gen", "Lu 2019",              "DNAmTL",             "Leukocyte telomere length",  "Whole blood",             "22.2–93.1"],
