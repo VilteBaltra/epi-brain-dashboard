@@ -179,7 +179,7 @@ st.divider()
 st.subheader("Key Findings")
 
 f1, f2, f3 = st.columns(3)
-f1.info("Epigenetic clock accuracy (and to a lesser extent brain age model accuracy) improves with age.")
+f1.info("Epigenetic clocks seemed to become more accurate with age, but this may partly reflect narrower age ranges in younger samples.")
 f2.info("Biological age models work best when they are built for the age group (and tissue) they are used on.")
 f3.info("Weak cross-sectional association between brain and epigenetic age estimates across development.")
 
