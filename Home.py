@@ -28,7 +28,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown(
-    "📄 [Consortium profile paper](https://www.nature.com/articles/s41380-025-03203-w)",
+    "📄 [Consortium profile paper](https://www.nature.com/articles/s41380-025-03203-w)&emsp;&emsp;[Preprint of this study (bioRxiv)](https://doi.org/10.64898/2026.07.24.739162)",
     unsafe_allow_html=True,
 )
 st.caption("Use the sidebar filters (cohort, age group, model) to update all figures across pages.")
