@@ -18,10 +18,10 @@ st.markdown("""
 render_sidebar_logo()
 st.title("Epigenetic & Brain Age Dashboard")
 st.markdown(
-    "This dashboard shows how 20 epigenetic clocks and 8 brain age models perform from birth to 24 years, "
-    "using data from 15 cohorts of the "
+    "This dashboard shows how **20 epigenetic clocks** and **8 brain age models** perform from **birth to 24 years**, "
+    "using data from **15 cohorts** of the "
     "[**MIND Consortium**](https://www.erasmusmc.nl/en/research/groups/methylation-imaging-and-neurodevelopment-mind-consortium) "
-    "(20,917 epigenetic and 19,925 brain age samples, including repeated measures). "
+    "(**20,917** epigenetic and **19,925** brain age samples, including repeated measures). "
     "Use the pages in the sidebar to explore results interactively, "
     "or the [**model database**](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html) "
     "for a quick, searchable overview.",
@@ -33,18 +33,15 @@ st.markdown(
 )
 st.caption("Use the sidebar filters (cohort, age group, model) to update all figures across pages.")
 
-st.divider()
-
-# ── STUDY SCOPE ───────────────────────────────────────────────────────────────
-st.subheader("Study scope")
-
-c1, c2, c3, c4, c5, c6 = st.columns(6)
-c1.metric("Cohorts", "15")
-c2.metric("Epi samples", "20,917")
-c3.metric("Brain samples", "19,925")
-c4.metric("Age range", "Birth–24 years")
-c5.metric("Epigenetic clocks", "20")
-c6.metric("Brain age models", "8")
+# ── STUDY SCOPE (summary strip under the intro) ───────────────────────────────
+# hidden for now: numbers are given (in bold) in the intro instead
+# c1, c2, c3, c4, c5, c6 = st.columns(6)
+# c1.metric("Cohorts", "15")
+# c2.metric("Epi samples", "20,917")
+# c3.metric("Brain samples", "19,925")
+# c4.metric("Age range", "Birth–24 years")
+# c5.metric("Epigenetic clocks", "20")
+# c6.metric("Brain age models", "8")
 
 st.divider()
 
