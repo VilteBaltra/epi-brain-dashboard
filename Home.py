@@ -18,17 +18,17 @@ st.markdown("""
 render_sidebar_logo()
 st.title("Epigenetic & Brain Age Dashboard")
 st.markdown(
-    "Exploring how epigenetic and brain age models perform across development "
-    "(birth–24 years), using data from 15 cohorts of the "
+    "This dashboard shows how 20 epigenetic clocks and 8 brain age models perform from birth to 24 years, "
+    "using data from 15 cohorts of the "
     "[**MIND Consortium**](https://www.erasmusmc.nl/en/research/groups/methylation-imaging-and-neurodevelopment-mind-consortium) "
-    "(20,917 epigenetic and 19,925 brain age samples including repeated measures). "
-    "Navigate the pages in the sidebar to explore model performance interactively, "
-    "or browse the [**model database**](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html) "
-    "for a static summary of all models and association results.",
+    "(20,917 epigenetic and 19,925 brain age samples, including repeated measures). "
+    "Use the pages in the sidebar to explore results interactively, "
+    "or the [**model database**](https://viltebaltra.github.io/epi-brain-dashboard/model_database.html) "
+    "for a quick, searchable overview.",
     unsafe_allow_html=True,
 )
 st.markdown(
-    "📄 [Consortium profile paper](https://www.nature.com/articles/s41380-025-03203-w)&emsp;&emsp;[Preprint of this study (bioRxiv)](https://doi.org/10.64898/2026.07.24.739162)",
+    "**Papers:** [MIND consortium profile](https://www.nature.com/articles/s41380-025-03203-w)&emsp;&emsp;[Preprint of this study (bioRxiv)](https://doi.org/10.64898/2026.07.24.739162)",
     unsafe_allow_html=True,
 )
 st.caption("Use the sidebar filters (cohort, age group, model) to update all figures across pages.")
@@ -36,15 +36,15 @@ st.caption("Use the sidebar filters (cohort, age group, model) to update all fig
 st.divider()
 
 # ── STUDY SCOPE ───────────────────────────────────────────────────────────────
-st.subheader("Study Scope")
+st.subheader("Study scope")
 
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 c1.metric("Cohorts", "15")
 c2.metric("Epi samples", "20,917")
 c3.metric("Brain samples", "19,925")
-c4.metric("Age Range", "0–24 years")
-c5.metric("Epigenetic Clocks", "20")
-c6.metric("Brain Age Models", "8")
+c4.metric("Age range", "Birth–24 years")
+c5.metric("Epigenetic clocks", "20")
+c6.metric("Brain age models", "8")
 
 st.divider()
 
